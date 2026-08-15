@@ -1,3 +1,4 @@
+
 # Frontend dependencies and build output
 campus_erp_frontend/node_modules/
 campus_erp_frontend/.next/
@@ -46,4 +47,13 @@ frappe-bench/sites/*/touched_tables.json
 
 # Editor
 .vscode/
+
+=======
+.DS_Store
+*.pyc
+*.egg-info
+*.swp
+tags
+node_modules
+__pycache__
 
