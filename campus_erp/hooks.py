@@ -8,7 +8,7 @@ app_license = "mit"
 # Apps
 # ------------------
 
-# required_apps = []
+required_apps = ["frappe/erpnext", "frappe/hrms", "frappe/education"]
 
 # Each item in the list will be shown as an app in the apps page
 # add_to_apps_screen = [
@@ -90,6 +90,17 @@ app_license = "mit"
 
 # before_uninstall = "campus_erp.uninstall.before_uninstall"
 # after_uninstall = "campus_erp.uninstall.after_uninstall"
+
+# Migration Hooks
+# ----------------
+# Custom Fields/Property Setters extending real Education/ERPNext/HRMS
+# DocTypes (per module, per IMPLEMENTATION-MAPPING.md) sync on every migrate —
+# idempotent, so safe to accumulate one entry per phase.
+
+after_migrate = [
+	"campus_erp.setup.custom_fields.sync_registrar_custom_fields",
+	"campus_erp.setup.custom_fields_finance.sync_finance_custom_fields",
+]
 
 # Integration Setup
 # ------------------
