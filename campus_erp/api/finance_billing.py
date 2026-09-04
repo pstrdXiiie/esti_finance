@@ -31,6 +31,7 @@ from frappe import _
 from frappe.query_builder.functions import Sum
 from frappe.utils import flt
 
+
 # Rounding tolerance for balance comparisons (a centavo), so float noise from
 # repeated recomputation never trips an over/under-payment guard by itself.
 FLT_TOLERANCE = 0.01
@@ -112,6 +113,59 @@ def record_payment(
 		"assessment_payment": balance["payment"],
 		"assessment_receivable": balance["receivable"],
 	}
+
+
+@frappe.whitelist()
+def record_payment_other_than_assessment(
+	student: str,
+	account_charged: str,
+	amount: float,
+	mode_of_payment: str | None = None,
+	reference_no: str | None = None,
+) -> dict:
+	"""Records a student payment that isn't tied to an SMS Student Assessment
+	(the legacy screen's "Student Payment (Other than Assessment)" option) --
+	e.g. miscellaneous fees or other one-off charges. Posts directly against a
+	manually chosen account rather than a receivable pulled from an
+	assessment, and creates no Payment Entry Reference since there's no
+	source document to reconcile against.
+	"""
+	amount = flt(amount)
+	if amount <= 0:
+		frappe.throw(_("Payment amount must be greater than zero."))
+
+	student_doc = frappe.get_doc("Student", student)
+	company = frappe.defaults.get_global_default("company")
+	if not company:
+		frappe.throw(_("No default Company is configured for this site."))
+
+	paid_to = frappe.get_cached_value("Company", company, "default_cash_account")
+	if not paid_to:
+		frappe.throw(_("Company {0} has no Default Cash Account configured.").format(company))
+
+	pe = frappe.get_doc(
+		{
+			"doctype": "Payment Entry",
+			"payment_type": "Receive",
+			"party_type": "Student",
+			"party": student_doc.name,
+			"party_name": student_doc.student_name,
+			"company": company,
+			"paid_from": account_charged,
+			"paid_to": paid_to,
+			"paid_amount": amount,
+			"received_amount": amount,
+			"reference_no": reference_no or "N/A",
+			"reference_date": frappe.utils.today(),
+		}
+	)
+	if mode_of_payment:
+		pe.mode_of_payment = mode_of_payment
+
+	pe.insert(ignore_permissions=frappe.has_permission("Payment Entry", "create"))
+	pe.submit()
+
+	return {"payment_entry": pe.name}
 
 
 @frappe.whitelist()
@@ -285,3 +339,5 @@ def record_past_receivable(student: str, as_of_date: str | None = None) -> dict:
 	)
 	doc.insert(ignore_permissions=frappe.has_permission("SMS Past Receivable", "create"))
 	return {"name": doc.name, "receivable": receivable}
+
+

@@ -73,6 +73,11 @@ CUSTOM_FIELDS = {
 		{"fieldname": "column_break_sms_item_1", "fieldtype": "Column Break", "insert_after": "default_cost"},
 		{"fieldname": "max_order_qty", "label": "Max Order Qty", "fieldtype": "Float", "insert_after": "column_break_sms_item_1"},
 	],
+	"Account": [
+		{"fieldname": "legacy_header", "label": "Header", "fieldtype": "Data",
+			"description": "Legacy Chart of Accounts grouping label (e.g. Cash in Bank, Contra Asset, Current) — distinct from ERPNext's account_type, which uses a different fixed taxonomy",
+			"insert_after": "account_type"},
+	],
 	"Item Price": [
 		{"fieldname": "branch", "label": "Branch", "fieldtype": "Link", "options": "Branch",
 			"description": "Only if per-branch cost ceilings genuinely differ from one Price List per branch", "insert_after": "batch_no"},

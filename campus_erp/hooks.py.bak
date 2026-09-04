@@ -100,8 +100,6 @@ required_apps = ["frappe/erpnext", "frappe/hrms", "frappe/education"]
 after_migrate = [
 	"campus_erp.setup.custom_fields.sync_registrar_custom_fields",
 	"campus_erp.setup.custom_fields_finance.sync_finance_custom_fields",
-        "campus_erp.setup.print_formats_finance.sync_finance_print_formats",
-        "campus_erp.setup.coa_headers_finance.sync_finance_coa_headers",
 ]
 
 # Integration Setup
