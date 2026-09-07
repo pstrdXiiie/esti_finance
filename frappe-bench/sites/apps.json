@@ -1,0 +1,61 @@
+{
+    "frappe": {
+        "resolution": {
+            "commit_hash": null,
+            "branch": null
+        },
+        "required": [],
+        "idx": 1,
+        "version": "15.117.0"
+    },
+    "erpnext": {
+        "is_repo": true,
+        "resolution": {
+            "commit_hash": "866688931ba51b20c8ecb77d7594c641339590ee",
+            "branch": "version-15"
+        },
+        "required": [],
+        "idx": 2,
+        "version": "15.119.0"
+    },
+    "payments": {
+        "is_repo": true,
+        "resolution": {
+            "commit_hash": "9885a6e500104f1f160add47d55b370773e67a81",
+            "branch": "version-15"
+        },
+        "required": [],
+        "idx": 3,
+        "version": "0.0.1"
+    },
+    "hrms": {
+        "is_repo": true,
+        "resolution": {
+            "commit_hash": "896c7996bc1b61bdbe254a19cf3b6f2ba848e912",
+            "branch": "version-15"
+        },
+        "required": [],
+        "idx": 4,
+        "version": "15.63.2"
+    },
+    "education": {
+        "is_repo": true,
+        "resolution": {
+            "commit_hash": "72efc5b3eb1ffc2036ff439ecf9bc95a4e1389b3",
+            "branch": "version-15.2"
+        },
+        "required": [],
+        "idx": 5,
+        "version": "15.5.3"
+    },
+    "campus_erp": {
+        "is_repo": true,
+        "resolution": {
+            "commit_hash": "8e4ce83956b425431549218d543126a040fd5e44",
+            "branch": "develop"
+        },
+        "required": [],
+        "idx": 6,
+        "version": "0.0.1"
+    }
+}

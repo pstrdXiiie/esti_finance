@@ -1,0 +1,19 @@
+# Frappe environment
+env/
+
+# Logs
+logs/
+
+# Site data and secrets
+sites/*/site_config.json
+
+# Site-generated/private data
+sites/*/private/
+sites/*/public/files/
+
+# Generated assets
+sites/assets/
+
+# Python cache
+__pycache__/
+*.pyc

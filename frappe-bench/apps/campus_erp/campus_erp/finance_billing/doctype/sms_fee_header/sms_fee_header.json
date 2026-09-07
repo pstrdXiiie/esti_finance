@@ -1,0 +1,100 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "format:{code_type}-{particular}",
+ "creation": "2026-09-01 00:00:00.000000",
+ "doctype": "DocType",
+ "document_type": "Setup",
+ "engine": "InnoDB",
+ "field_order": [
+  "code_type",
+  "particular",
+  "amount",
+  "details"
+ ],
+ "fields": [
+  {
+   "fieldname": "code_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Code Type",
+   "options": "Asset\nExpense\nFees\nLiabilities\nMiscellaneous\nRevenue\nScholarship\nUnit",
+   "reqd": 1
+  },
+  {
+   "fieldname": "particular",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Particular",
+   "reqd": 1
+  },
+  {
+   "description": "Sum of the detail lines below, recomputed on save",
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "details",
+   "fieldtype": "Table",
+   "label": "Detail",
+   "options": "SMS Fee Header Detail"
+  }
+ ],
+ "icon": "fa fa-list-alt",
+ "index_web_pages_for_search": 1,
+ "istable": 0,
+ "is_submittable": 0,
+ "links": [],
+ "modified": "2026-09-01 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Finance Billing",
+ "name": "SMS Fee Header",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "SMS Finance Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "SMS Administrator",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 0,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "SMS Cashier",
+   "share": 1,
+   "write": 0
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

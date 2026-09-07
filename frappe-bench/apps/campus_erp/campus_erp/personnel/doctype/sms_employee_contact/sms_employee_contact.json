@@ -1,0 +1,72 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-08-18 12:00:00.000000",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "engine": "InnoDB",
+ "field_order": [
+  "relation",
+  "contact_name",
+  "contact_no",
+  "email",
+  "is_dependent"
+ ],
+ "fields": [
+  {
+   "fieldname": "relation",
+   "fieldtype": "Data",
+   "label": "Relation",
+   "reqd": 1,
+   "read_only": 0,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "contact_name",
+   "fieldtype": "Data",
+   "label": "Contact Name",
+   "reqd": 1,
+   "read_only": 0,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "contact_no",
+   "fieldtype": "Data",
+   "label": "Contact No",
+   "reqd": 0,
+   "read_only": 0,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email",
+   "reqd": 0,
+   "read_only": 0,
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "is_dependent",
+   "fieldtype": "Check",
+   "label": "Is Dependent",
+   "reqd": 0,
+   "read_only": 0,
+   "in_list_view": 0
+  }
+ ],
+ "icon": "fa fa-file",
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "is_submittable": 0,
+ "links": [],
+ "modified": "2026-08-18 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Personnel",
+ "name": "SMS Employee Contact",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

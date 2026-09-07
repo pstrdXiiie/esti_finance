@@ -1,0 +1,195 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "field:request",
+ "creation": "2026-08-18 12:00:00.000000",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "engine": "InnoDB",
+ "field_order": [
+  "request",
+  "book",
+  "borrower_type",
+  "student",
+  "guest",
+  "date_approved",
+  "date_due",
+  "date_returned",
+  "status",
+  "overdue_days",
+  "fine_amount",
+  "or_number"
+ ],
+ "fields": [
+  {
+   "fieldname": "request",
+   "fieldtype": "Link",
+   "label": "Request",
+   "options": "SMS Library Borrow Request",
+   "reqd": 1,
+   "read_only": 0,
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "book",
+   "fieldtype": "Link",
+   "label": "Book",
+   "options": "SMS Library Book",
+   "reqd": 0,
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "borrower_type",
+   "fieldtype": "Select",
+   "label": "Borrower Type",
+   "options": "Student\nGuest",
+   "reqd": 0,
+   "read_only": 1,
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student",
+   "reqd": 0,
+   "read_only": 1,
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "guest",
+   "fieldtype": "Link",
+   "label": "Guest",
+   "options": "SMS Library Guest",
+   "reqd": 0,
+   "read_only": 1,
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "date_approved",
+   "fieldtype": "Date",
+   "label": "Date Approved",
+   "reqd": 1,
+   "read_only": 0,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "date_due",
+   "fieldtype": "Date",
+   "label": "Date Due",
+   "reqd": 1,
+   "read_only": 0,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "date_returned",
+   "fieldtype": "Date",
+   "label": "Date Returned",
+   "reqd": 0,
+   "read_only": 0,
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Outstanding\nReturned",
+   "default": "Outstanding",
+   "description": "Mutated only via the whitelisted circulation API",
+   "reqd": 0,
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "overdue_days",
+   "fieldtype": "Int",
+   "label": "Overdue Days",
+   "reqd": 0,
+   "read_only": 1,
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "fine_amount",
+   "fieldtype": "Currency",
+   "label": "Fine Amount",
+   "reqd": 0,
+   "read_only": 1,
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "or_number",
+   "fieldtype": "Data",
+   "label": "OR Number",
+   "description": "Conditionally required only when a late return produces a fine — enforced in the API layer, not here",
+   "reqd": 0,
+   "read_only": 0,
+   "in_list_view": 0
+  }
+ ],
+ "icon": "fa fa-file",
+ "index_web_pages_for_search": 1,
+ "istable": 0,
+ "is_submittable": 0,
+ "links": [],
+ "modified": "2026-08-18 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Library",
+ "name": "SMS Library Loan",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "SMS Librarian",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 0,
+   "delete": 0,
+   "email": 0,
+   "export": 0,
+   "print": 1,
+   "read": 1,
+   "report": 0,
+   "role": "Student",
+   "share": 0,
+   "write": 0
+  },
+  {
+   "create": 0,
+   "delete": 0,
+   "email": 0,
+   "export": 0,
+   "print": 1,
+   "read": 1,
+   "report": 0,
+   "role": "SMS Library Guest",
+   "share": 0,
+   "write": 0
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

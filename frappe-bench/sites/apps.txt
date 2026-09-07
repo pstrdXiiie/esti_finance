@@ -1,0 +1,6 @@
+frappe
+erpnext
+education
+hrms
+payments
+campus_erp

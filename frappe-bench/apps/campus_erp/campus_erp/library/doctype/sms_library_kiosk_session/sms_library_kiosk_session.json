@@ -1,0 +1,93 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "hash",
+ "creation": "2026-08-18 12:00:00.000000",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "engine": "InnoDB",
+ "field_order": [
+  "terminal_id",
+  "session_status",
+  "current_borrower_type",
+  "current_borrower_label",
+  "force_logout"
+ ],
+ "fields": [
+  {
+   "description": "Must be a stable per-device token, not the OS hostname — legacy collided across cloned VMs",
+   "fieldname": "terminal_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Terminal ID",
+   "reqd": 1
+  },
+  {
+   "default": "Idle",
+   "fieldname": "session_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Session Status",
+   "options": "Idle\nActive"
+  },
+  {
+   "fieldname": "current_borrower_type",
+   "fieldtype": "Select",
+   "label": "Current Borrower Type",
+   "options": "\nStudent\nGuest"
+  },
+  {
+   "fieldname": "current_borrower_label",
+   "fieldtype": "Data",
+   "label": "Current Borrower Label",
+   "read_only": 1
+  },
+  {
+   "description": "Set remotely by the librarian's monitor view to force this terminal to log out",
+   "fieldname": "force_logout",
+   "fieldtype": "Check",
+   "label": "Force Logout"
+  }
+ ],
+ "icon": "fa fa-file",
+ "index_web_pages_for_search": 1,
+ "istable": 0,
+ "is_submittable": 0,
+ "links": [],
+ "modified": "2026-08-18 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Library",
+ "name": "SMS Library Kiosk Session",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "SMS Librarian",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

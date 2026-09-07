@@ -1,0 +1,109 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "naming_series:",
+ "creation": "2026-08-18 15:00:00.000000",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "batch_datetime",
+  "branch",
+  "printed_by",
+  "items"
+ ],
+ "fields": [
+  {
+   "default": "STK-.#####",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "STK-.#####",
+   "reqd": 1
+  },
+  {
+   "fieldname": "batch_datetime",
+   "fieldtype": "Datetime",
+   "label": "Batch Date/Time",
+   "default": "now",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "branch",
+   "fieldtype": "Link",
+   "label": "Branch",
+   "options": "Branch",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "printed_by",
+   "fieldtype": "Link",
+   "label": "Printed By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "Sticker Items",
+   "options": "SMS Asset Sticker Batch Item",
+   "reqd": 1
+  }
+ ],
+ "icon": "fa fa-file",
+ "index_web_pages_for_search": 1,
+ "istable": 0,
+ "is_submittable": 0,
+ "links": [],
+ "modified": "2026-08-18 15:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Asset",
+ "name": "SMS Asset Sticker Batch",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "SMS Administrator",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "SMS Property Custodian",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "SMS Asst Property Custodian",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

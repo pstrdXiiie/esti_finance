@@ -1,0 +1,73 @@
+{
+ "actions": [],
+ "creation": "2026-08-18 12:00:00.000000",
+ "doctype": "DocType",
+ "document_type": "Other",
+ "engine": "InnoDB",
+ "field_order": [
+  "fine_per_day",
+  "default_loan_period_days",
+  "max_active_loans_per_borrower",
+  "block_borrowing_if_overdue"
+ ],
+ "fields": [
+  {
+   "default": "5",
+   "fieldname": "fine_per_day",
+   "fieldtype": "Currency",
+   "label": "Fine Per Day",
+   "reqd": 1
+  },
+  {
+   "default": "7",
+   "fieldname": "default_loan_period_days",
+   "fieldtype": "Int",
+   "label": "Default Loan Period Days"
+  },
+  {
+   "description": "0 = unlimited",
+   "fieldname": "max_active_loans_per_borrower",
+   "fieldtype": "Int",
+   "label": "Max Active Loans Per Borrower"
+  },
+  {
+   "default": "1",
+   "fieldname": "block_borrowing_if_overdue",
+   "fieldtype": "Check",
+   "label": "Block New Borrowing If Overdue Item Exists"
+  }
+ ],
+ "icon": "fa fa-cog",
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-08-18 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Library",
+ "name": "SMS Library Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "SMS Librarian",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

@@ -1,0 +1,797 @@
+"use client"
+
+import { useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
+import { useForm } from "react-hook-form"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { toast } from "sonner"
+import {
+  ArrowDownIcon,
+  ArrowUpIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ChevronsUpDownIcon,
+  EyeIcon,
+  FilterIcon,
+  MoreVerticalIcon,
+  PencilIcon,
+  SearchIcon,
+  Trash2Icon,
+  UserXIcon,
+  XIcon,
+} from "lucide-react"
+
+import { frappe, getErrorMessage } from "@/lib/frappe"
+import type { FieldSpec, FormSpec } from "@/lib/forms/types"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { Skeleton } from "@/components/ui/skeleton"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Form } from "@/components/ui/form"
+import { DynamicField } from "@/components/sms/DynamicField"
+
+const PAGE_SIZE = 10
+
+/**
+ * Groups fields by their (optional) `section` for the edit dialog, in order
+ * of first appearance — fields with no section fall into one ungrouped
+ * bucket rendered inline, same as before this grouping existed. Consecutive
+ * or scattered fields sharing a section name are merged into one group.
+ */
+function groupFieldsBySection(fields: FieldSpec[]): Array<{ section: string | null; fields: FieldSpec[] }> {
+  const groups: Array<{ section: string | null; fields: FieldSpec[] }> = []
+  const indexBySection = new Map<string | null, number>()
+
+  for (const field of fields) {
+    const key = field.section ?? null
+    let idx = indexBySection.get(key)
+    if (idx === undefined) {
+      idx = groups.length
+      indexBySection.set(key, idx)
+      groups.push({ section: key, fields: [] })
+    }
+    groups[idx].fields.push(field)
+  }
+
+  return groups
+}
+
+/**
+ * spec.title is already plural (e.g. "Students", "Graduation Batches") —
+ * singularize it for a count of 1 rather than appending another "s". Plurals
+ * formed with "-es" after ch/sh/s/x/z (e.g. "Batches" -> "Batch") need two
+ * characters stripped, not one, or they end up misspelled ("Batche").
+ * Preserves the original casing (unlike a lowercase-then-slice), so it works
+ * both inline (lowercased by the caller) and as a toast's leading word.
+ */
+function singularize(title: string): string {
+  if (/(ch|sh|s|x|z)es$/i.test(title)) return title.slice(0, -2)
+  if (/s$/i.test(title)) return title.slice(0, -1)
+  return title
+}
+
+function itemLabel(title: string, count: number) {
+  const label = count === 1 ? singularize(title) : title
+  return label.toLowerCase()
+}
+
+/**
+ * A delete blocked by Frappe's LinkExistsError names the blocking doctype
+ * and document literally in its message (e.g. "...is linked with SMS
+ * Graduation Batch lr0atkhk55") — match that against a spec's opt-in
+ * `cascadeDeleteDoctypes` allowlist (derived/computed records that are safe
+ * to remove on request, e.g. a graduation run's batch record) so the delete
+ * flow can offer to remove the blocker and retry, rather than just failing.
+ * Doctypes not on the allowlist (e.g. Payment Entry) never match, so this
+ * never touches financial/accounting records.
+ */
+function findCascadeTarget(
+  error: unknown,
+  candidates: string[] | undefined
+): { doctype: string; name: string } | null {
+  if (!candidates?.length) return null
+  const message = getErrorMessage(error)
+  for (const doctype of candidates) {
+    const marker = `linked with ${doctype} `
+    const idx = message.indexOf(marker)
+    if (idx === -1) continue
+    const name = message.slice(idx + marker.length).trim().split(/[\s,.;]/)[0]
+    if (name) return { doctype, name }
+  }
+  return null
+}
+
+/**
+ * The ~115 legacy Master/Detail screens (blueprint §5.1): a list view plus an
+ * Add/Edit detail panel, backed by one Frappe DocType.
+ */
+export function MasterDetailScreen({ spec }: { spec: FormSpec }) {
+  const router = useRouter()
+  const queryClient = useQueryClient()
+  const [editing, setEditing] = useState<Record<string, unknown> | null>(null)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [relatedRecordName, setRelatedRecordName] = useState<string | null>(null)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [search, setSearch] = useState("")
+  const [filterOpen, setFilterOpen] = useState(false)
+  const [filterField, setFilterField] = useState<string>("")
+  const [filterValue, setFilterValue] = useState("")
+  const [sort, setSort] = useState<{ field: string; dir: "asc" | "desc" } | null>(null)
+  const [page, setPage] = useState(1)
+
+  const listColumns = spec.fields.filter((f) => f.inListView)
+  const columns = listColumns.length ? listColumns : spec.fields.slice(0, 4)
+  const searchableColumns = columns.filter((c) =>
+    ["Data", "Text", "Small Text", "Link", "Select"].includes(c.fieldtype)
+  )
+
+  const { data, isLoading } = useQuery({
+    queryKey: [spec.doctype, "list"],
+    queryFn: () =>
+      frappe.list(spec.doctype, {
+        fields: ["name", ...spec.fields.map((f) => f.fieldname)],
+        limit_page_length: 100,
+      }),
+  })
+
+  const filteredRows = useMemo(() => {
+    let rows = data ?? []
+
+    if (search.trim()) {
+      const needle = search.trim().toLowerCase()
+      const haystack = searchableColumns.length ? searchableColumns : columns
+      rows = rows.filter((row) =>
+        haystack.some((c) => String(row[c.fieldname] ?? "").toLowerCase().includes(needle))
+      )
+    }
+
+    if (filterField && filterValue.trim()) {
+      const needle = filterValue.trim().toLowerCase()
+      rows = rows.filter((row) => String(row[filterField] ?? "").toLowerCase().includes(needle))
+    }
+
+    if (sort) {
+      const { field, dir } = sort
+      rows = [...rows].sort((a, b) => {
+        const av = a[field]
+        const bv = b[field]
+        const cmp =
+          typeof av === "number" && typeof bv === "number"
+            ? av - bv
+            : String(av ?? "").localeCompare(String(bv ?? ""))
+        return dir === "asc" ? cmp : -cmp
+      })
+    }
+
+    return rows
+  }, [data, search, filterField, filterValue, sort, columns, searchableColumns])
+
+  const total = filteredRows.length
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
+  const pageStart = total === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1
+  const pageEnd = Math.min(currentPage * PAGE_SIZE, total)
+  const pageRows = filteredRows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+
+  function updateSearch(value: string) {
+    setSearch(value)
+    setPage(1)
+  }
+
+  function applyFilter(field: string, value: string) {
+    setFilterField(field)
+    setFilterValue(value)
+    setPage(1)
+  }
+
+  function toggleSort(field: string) {
+    setSort((prev) => {
+      if (!prev || prev.field !== field) return { field, dir: "asc" }
+      if (prev.dir === "asc") return { field, dir: "desc" }
+      return null
+    })
+  }
+
+  const form = useForm<Record<string, unknown>>({ defaultValues: {} })
+
+  const relatedFieldNames = new Set(spec.relatedRecord?.fields.map((f) => f.fieldname) ?? [])
+
+  const dialogFields = useMemo(() => {
+    if (!spec.relatedRecord) return spec.fields
+    const { relatedRecord } = spec
+    return [
+      ...spec.fields,
+      ...relatedRecord.fields.map((f) => ({
+        ...f,
+        section: relatedRecord.section,
+        readOnly: f.readOnly || !relatedRecordName,
+      })),
+    ]
+  }, [spec, relatedRecordName])
+
+  const saveMutation = useMutation({
+    mutationFn: async (values: Record<string, unknown>) => {
+      const baseValues: Record<string, unknown> = {}
+      const relatedValues: Record<string, unknown> = {}
+      for (const [key, value] of Object.entries(values)) {
+        if (relatedFieldNames.has(key)) relatedValues[key] = value
+        else baseValues[key] = value
+      }
+
+      const result = editing?.name
+        ? await frappe.updateDoc(spec.doctype, String(editing.name), baseValues)
+        : await frappe.createDoc(spec.doctype, baseValues)
+
+      if (spec.relatedRecord && relatedRecordName) {
+        await frappe.updateDoc(spec.relatedRecord.doctype, relatedRecordName, relatedValues)
+        queryClient.invalidateQueries({ queryKey: [spec.relatedRecord.doctype, "list"] })
+      }
+
+      return result
+    },
+    onSuccess: () => {
+      toast.success(`${spec.title} saved`)
+      queryClient.invalidateQueries({ queryKey: [spec.doctype, "list"] })
+      setDialogOpen(false)
+    },
+    onError: (error) => toast.error(`Could not save ${spec.title}: ${getErrorMessage(error)}`),
+  })
+
+  // A blocker can itself be blocked by another allowlisted doctype (e.g. a
+  // Student's Pre Enrollment blocked by its own Student Assessment, or that
+  // Assessment blocked from even being CANCELLED by a Payment Entry still
+  // referencing it) — so resolving one is the same "try the operation,
+  // resolve whatever blocks it, retry" shape throughout, just recursed onto
+  // the blocker's doctype/name. `budget` is shared across the whole call
+  // tree (not reset per level) so a pathological chain can't loop forever.
+  async function deleteResolvingBlockers(
+    doctype: string,
+    name: string,
+    budget: { remaining: number }
+  ) {
+    if (budget.remaining <= 0) {
+      throw new Error("Too many linked records to resolve automatically.")
+    }
+    budget.remaining -= 1
+
+    const subject = doctype === spec.doctype ? itemLabel(spec.title, 1) : `${doctype} ${name}`
+    const candidates = [
+      ...(spec.cascadeDeleteDoctypes ?? []),
+      ...(spec.cancelAndDeleteDoctypes ?? []),
+    ]
+
+    if (spec.cancelAndDeleteDoctypes?.includes(doctype)) {
+      try {
+        await frappe.updateDoc(doctype, name, { docstatus: 2 })
+      } catch (cancelError) {
+        // Cancelling a submitted record can itself fail with the exact same
+        // "linked with X" shape as a delete failure (e.g. this Assessment
+        // can't be cancelled while a Payment Entry still references it) —
+        // resolve that blocker and retry this doctype/name from the top
+        // (cancel, then delete) rather than assuming every cancel failure
+        // just means "already cancelled" and barreling into a delete that's
+        // guaranteed to fail with a much less informative error.
+        const blocker = findCascadeTarget(cancelError, candidates)
+        if (blocker) {
+          if (
+            !window.confirm(
+              `This ${subject} is linked with ${blocker.doctype} ${blocker.name}, which must be resolved before it can be cancelled. Continue?`
+            )
+          ) {
+            throw cancelError
+          }
+          await deleteResolvingBlockers(blocker.doctype, blocker.name, budget)
+          return deleteResolvingBlockers(doctype, name, budget)
+        }
+        // Not a link error — already cancelled, already a draft, or some
+        // other real issue. Fall through to the delete attempt below, which
+        // will surface a clear error if cancelling really was still needed.
+      }
+    }
+
+    try {
+      await frappe.deleteDoc(doctype, name)
+      if (doctype !== spec.doctype) {
+        queryClient.invalidateQueries({ queryKey: [doctype, "list"] })
+      }
+    } catch (error) {
+      const blocker = findCascadeTarget(error, candidates)
+      if (!blocker) throw error
+
+      const needsCancelFirst = spec.cancelAndDeleteDoctypes?.includes(blocker.doctype) ?? false
+      const confirmMessage = needsCancelFirst
+        ? `This ${subject} is linked with ${blocker.doctype} ${blocker.name}, a submitted record. This will CANCEL that ${blocker.doctype} — reversing any financial/ledger entries it posted — and then delete it, before trying this delete again. Continue?`
+        : `This ${subject} is linked with ${blocker.doctype} ${blocker.name}. Delete that ${blocker.doctype} and try again?`
+
+      if (!window.confirm(confirmMessage)) throw error
+
+      await deleteResolvingBlockers(blocker.doctype, blocker.name, budget)
+      await deleteResolvingBlockers(doctype, name, budget)
+    }
+  }
+
+  async function deleteWithCascade(name: string) {
+    // A single submitted assessment can pull in its own Payment Entry,
+    // which needs its own cancel + 2 Payment Ledger Entry + 4 GL Entry
+    // clears before the assessment's own 2 PLE + 4 GL Entry rows even start
+    // - roughly 15-20 recursive calls per assessment. A student can have
+    // several assessments (each its own such chain) plus Pre/Program/Course
+    // Enrollment on top, so this needs real headroom - 50 still aborted
+    // mid-chain on a two-assessment student despite steady real progress.
+    await deleteResolvingBlockers(spec.doctype, name, { remaining: 200 })
+  }
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteWithCascade,
+    onSuccess: () => {
+      toast.success(`${singularize(spec.title)} deleted`)
+      queryClient.invalidateQueries({ queryKey: [spec.doctype, "list"] })
+    },
+    onError: (error) => toast.error(`Could not delete ${spec.title}: ${getErrorMessage(error)}`),
+  })
+
+  const dropMutation = useMutation({
+    mutationFn: (name: string) =>
+      frappe.updateDoc(spec.doctype, name, {
+        [spec.statusField!.fieldname]: spec.statusField!.droppedValue,
+      }),
+    onSuccess: () => {
+      toast.success(`${singularize(spec.title)} marked as ${spec.statusField!.droppedValue}`)
+      queryClient.invalidateQueries({ queryKey: [spec.doctype, "list"] })
+    },
+    onError: (error) =>
+      toast.error(`Could not update ${spec.title}: ${getErrorMessage(error)}`),
+  })
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (names: string[]) => {
+      await Promise.all(names.map((name) => deleteWithCascade(name)))
+    },
+    onSuccess: (_data, names) => {
+      toast.success(`Deleted ${names.length} ${itemLabel(spec.title, names.length)}`)
+      queryClient.invalidateQueries({ queryKey: [spec.doctype, "list"] })
+      setSelected(new Set())
+    },
+    onError: (error) => toast.error(`Could not delete ${spec.title}: ${getErrorMessage(error)}`),
+  })
+
+  const bulkDropMutation = useMutation({
+    mutationFn: async (names: string[]) => {
+      await Promise.all(
+        names.map((name) =>
+          frappe.updateDoc(spec.doctype, name, {
+            [spec.statusField!.fieldname]: spec.statusField!.droppedValue,
+          })
+        )
+      )
+    },
+    onSuccess: (_data, names) => {
+      toast.success(
+        `Marked ${names.length} ${itemLabel(spec.title, names.length)} as ${spec.statusField!.droppedValue}`
+      )
+      queryClient.invalidateQueries({ queryKey: [spec.doctype, "list"] })
+      setSelected(new Set())
+    },
+    onError: (error) => toast.error(`Could not update ${spec.title}: ${getErrorMessage(error)}`),
+  })
+
+  function toggleRow(name: string, checked: boolean) {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (checked) next.add(name)
+      else next.delete(name)
+      return next
+    })
+  }
+
+  function toggleAll(rows: Record<string, unknown>[], checked: boolean) {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      for (const row of rows) {
+        if (checked) next.add(String(row.name))
+        else next.delete(String(row.name))
+      }
+      return next
+    })
+  }
+
+  function openNew() {
+    setEditing(null)
+    setRelatedRecordName(null)
+    form.reset({})
+    setDialogOpen(true)
+  }
+
+  async function openRow(row: Record<string, unknown>) {
+    setEditing(row)
+    form.reset(row)
+    setDialogOpen(true)
+
+    if (!spec.relatedRecord) {
+      setRelatedRecordName(null)
+      return
+    }
+
+    const { relatedRecord } = spec
+    const [related] = await frappe.list<Record<string, unknown>>(relatedRecord.doctype, {
+      filters: [[relatedRecord.linkField, "=", String(row.name)]],
+      fields: ["name", ...relatedRecord.fields.map((f) => f.fieldname)],
+      order_by: `${relatedRecord.orderBy} desc`,
+      limit_page_length: 1,
+    })
+    setRelatedRecordName(related ? String(related.name) : null)
+    // related.name is the Program Enrollment's own name, not the Student's —
+    // spreading it in would clobber row.name in form state (submitted back
+    // as the base doctype's `name`, which Frappe reads as a rename request).
+    // relatedRecordName above is the only place that name is needed.
+    const relatedValues = Object.fromEntries(
+      Object.entries(related ?? {}).filter(([key]) => key !== "name")
+    )
+    form.reset({ ...row, ...relatedValues })
+  }
+
+  return (
+    <div className="grid gap-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">{spec.title}</h1>
+        <Button onClick={() => (spec.addPath ? router.push(spec.addPath) : openNew())}>Add {spec.title}</Button>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative w-full max-w-xs">
+          <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => updateSearch(e.target.value)}
+            placeholder={`Search ${spec.title.toLowerCase()}...`}
+            className="pl-8"
+          />
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setFilterOpen((v) => !v)}
+        >
+          <FilterIcon />
+          Filter
+        </Button>
+        {filterField && filterValue.trim() && (
+          <Button type="button" variant="ghost" size="sm" onClick={() => applyFilter("", "")}>
+            Clear filter
+            <XIcon />
+          </Button>
+        )}
+      </div>
+
+      {filterOpen && (
+        <div className="flex flex-wrap items-center gap-2 rounded-md border p-3">
+          <Select value={filterField} onValueChange={(value) => applyFilter(value ?? "", filterValue)}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Filter by column" />
+            </SelectTrigger>
+            <SelectContent>
+              {columns.map((c) => (
+                <SelectItem key={c.fieldname} value={c.fieldname}>
+                  {c.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Input
+            value={filterValue}
+            onChange={(e) => applyFilter(filterField, e.target.value)}
+            placeholder="Value contains..."
+            disabled={!filterField}
+            className="w-48"
+          />
+        </div>
+      )}
+
+      {isLoading ? (
+        <Skeleton className="h-64 w-full" />
+      ) : (
+        <div className="overflow-x-auto rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-10">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4"
+                    aria-label="Select all rows"
+                    checked={pageRows.length > 0 && pageRows.every((row) => selected.has(String(row.name)))}
+                    onChange={(e) => toggleAll(pageRows, e.target.checked)}
+                  />
+                </TableHead>
+                {columns.map((c) => (
+                  <TableHead key={c.fieldname}>
+                    <button
+                      type="button"
+                      className="flex items-center gap-1 hover:text-foreground"
+                      onClick={() => toggleSort(c.fieldname)}
+                    >
+                      {c.label}
+                      {sort?.field === c.fieldname ? (
+                        sort.dir === "asc" ? (
+                          <ArrowUpIcon className="size-3.5" />
+                        ) : (
+                          <ArrowDownIcon className="size-3.5" />
+                        )
+                      ) : (
+                        <ChevronsUpDownIcon className="size-3.5 text-muted-foreground" />
+                      )}
+                    </button>
+                  </TableHead>
+                ))}
+                <TableHead />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {pageRows.map((row) => (
+                <TableRow
+                  key={String(row.name)}
+                  className="cursor-pointer"
+                  onClick={() => openRow(row)}
+                >
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4"
+                      aria-label={`Select ${String(row.name)}`}
+                      checked={selected.has(String(row.name))}
+                      onChange={(e) => toggleRow(String(row.name), e.target.checked)}
+                    />
+                  </TableCell>
+                  {columns.map((c) => (
+                    <TableCell key={c.fieldname}>
+                      {String(row[c.fieldname] ?? "")}
+                    </TableCell>
+                  ))}
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      {spec.detailPath && (
+                        <Button
+                          type="button"
+                          size="icon-sm"
+                          variant="ghost"
+                          aria-label={`View ${spec.title}`}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            router.push(
+                              `${spec.detailPath}/${encodeURIComponent(String(row.name))}`
+                            )
+                          }}
+                        >
+                          <EyeIcon />
+                        </Button>
+                      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger
+                          render={
+                            <Button
+                              type="button"
+                              size="icon-sm"
+                              variant="ghost"
+                              aria-label={`More actions for ${itemLabel(spec.title, 1)}`}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          }
+                        >
+                          <MoreVerticalIcon />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenuItem onClick={() => openRow(row)}>
+                            <PencilIcon />
+                            Edit
+                          </DropdownMenuItem>
+                          {spec.statusField && (
+                            <DropdownMenuItem
+                              disabled={dropMutation.isPending}
+                              onClick={() => dropMutation.mutate(String(row.name))}
+                            >
+                              <UserXIcon />
+                              {spec.statusField.label ?? "Drop"}
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem
+                            variant="destructive"
+                            disabled={deleteMutation.isPending}
+                            onClick={() => {
+                              if (
+                                window.confirm(
+                                  `Delete this ${itemLabel(spec.title, 1)}? This cannot be undone.`
+                                )
+                              ) {
+                                deleteMutation.mutate(String(row.name))
+                              }
+                            }}
+                          >
+                            <Trash2Icon />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      {!isLoading && (
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <span>
+            {total === 0
+              ? `Showing 0 from 0`
+              : `Showing ${pageStart}-${pageEnd} from ${total}`}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-sm"
+              disabled={currentPage <= 1}
+              aria-label="Previous page"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              <ChevronLeftIcon />
+            </Button>
+            <span>
+              {currentPage} of {totalPages}
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-sm"
+              disabled={currentPage >= totalPages}
+              aria-label="Next page"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            >
+              <ChevronRightIcon />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="w-full max-w-2xl sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editing ? `Edit ${spec.title}` : `New ${spec.title}`}
+            </DialogTitle>
+          </DialogHeader>
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit((values) =>
+                saveMutation.mutate(values)
+              )}
+              className="grid gap-6"
+            >
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {groupFieldsBySection(dialogFields).map((group, idx) =>
+                  group.section ? (
+                    <div
+                      key={group.section}
+                      className="relative rounded-md border p-3 pt-4 sm:col-span-2"
+                    >
+                      <span className="absolute -top-2.5 left-3 bg-card px-1 text-xs font-medium">
+                        {group.section}
+                      </span>
+                      {group.section === spec.relatedRecord?.section && !relatedRecordName && (
+                        <p className="mb-2 text-xs text-muted-foreground">
+                          {spec.relatedRecord.missingRecordHint}
+                        </p>
+                      )}
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        {group.fields.map((f) => (
+                          <DynamicField key={f.fieldname} control={form.control} spec={f} />
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div key={`ungrouped-${idx}`} className="contents">
+                      {group.fields.map((f) => (
+                        <DynamicField key={f.fieldname} control={form.control} spec={f} />
+                      ))}
+                    </div>
+                  )
+                )}
+              </div>
+              <Button type="submit" disabled={saveMutation.isPending}>
+                {saveMutation.isPending ? "Saving…" : "Save"}
+              </Button>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {selected.size > 0 && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-6 z-50 flex justify-center">
+          <div className="pointer-events-auto flex items-center gap-3 rounded-full border bg-background px-4 py-2 shadow-lg">
+            <span className="text-sm font-medium">
+              {selected.size} {itemLabel(spec.title, selected.size)} selected
+            </span>
+            {spec.statusField && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="rounded-full"
+                disabled={bulkDropMutation.isPending}
+                onClick={() => {
+                  if (
+                    window.confirm(
+                      `Mark ${selected.size} selected ${itemLabel(spec.title, selected.size)} as ${spec.statusField!.droppedValue}?`
+                    )
+                  ) {
+                    bulkDropMutation.mutate(Array.from(selected))
+                  }
+                }}
+              >
+                <UserXIcon />
+                {bulkDropMutation.isPending ? "Updating…" : (spec.statusField.label ?? "Drop")}
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              className="rounded-full"
+              disabled={bulkDeleteMutation.isPending}
+              onClick={() => {
+                if (
+                  window.confirm(
+                    `Delete ${selected.size} selected ${itemLabel(spec.title, selected.size)}? This cannot be undone.`
+                  )
+                ) {
+                  bulkDeleteMutation.mutate(Array.from(selected))
+                }
+              }}
+            >
+              <Trash2Icon />
+              {bulkDeleteMutation.isPending ? "Deleting…" : "Delete"}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              className="rounded-full"
+              aria-label="Clear selection"
+              onClick={() => setSelected(new Set())}
+            >
+              <XIcon />
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

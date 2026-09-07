@@ -1,0 +1,52 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-08-24 12:00:00.000000",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "engine": "InnoDB",
+ "field_order": [
+  "subject",
+  "unit",
+  "prerequisite_met"
+ ],
+ "fields": [
+  {
+   "fieldname": "subject",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Subject",
+   "options": "Course",
+   "reqd": 1
+  },
+  {
+   "fieldname": "unit",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Unit",
+   "read_only": 1,
+   "description": "Snapshot of Course.unit at save time - see save_pre_enrollment, not a declarative fetch_from"
+  },
+  {
+   "fieldname": "prerequisite_met",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Prerequisite Met",
+   "read_only": 1
+  }
+ ],
+ "icon": "fa fa-file",
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "is_submittable": 0,
+ "links": [],
+ "modified": "2026-08-24 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Registrar",
+ "name": "SMS Pre Enrollment Subject",
+ "owner": "Administrator",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

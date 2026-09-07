@@ -1,0 +1,68 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-08-18 00:00:00.000000",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "engine": "InnoDB",
+ "field_order": [
+  "employee",
+  "sss_number",
+  "monthly_contribution",
+  "ec_contribution",
+  "is_manual_override",
+  "override_remark"
+ ],
+ "fields": [
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Employee",
+   "options": "Employee",
+   "reqd": 1
+  },
+  {
+   "fieldname": "sss_number",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "SSS Number"
+  },
+  {
+   "fieldname": "monthly_contribution",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Monthly Contribution"
+  },
+  {
+   "fieldname": "ec_contribution",
+   "fieldtype": "Currency",
+   "label": "EC Contribution"
+  },
+  {
+   "description": "Folds in the legacy's manual-correction flag",
+   "fieldname": "is_manual_override",
+   "fieldtype": "Check",
+   "label": "Is Manual Override"
+  },
+  {
+   "fieldname": "override_remark",
+   "fieldtype": "Small Text",
+   "label": "Override Remark"
+  }
+ ],
+ "icon": "fa fa-file",
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "is_submittable": 0,
+ "links": [],
+ "modified": "2026-08-18 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Personnel",
+ "name": "SMS SSS Report Line",
+ "owner": "Administrator",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
