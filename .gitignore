@@ -1,0 +1,40 @@
+# Frontend dependencies and build output
+campus_erp_frontend/node_modules/
+campus_erp_frontend/.next/
+campus_erp_frontend/out/
+**/node_modules/
+**/.next/
+**/dist/
+**/build/
+**/__pycache__/
+**/*.pyc
+
+# Environment variables
+**/.env
+**/.env.local
+**/.env.development.local
+**/.env.test.local
+**/.env.production.local
+
+# Backend environment, logs, runtime data, and generated site state
+frappe-bench/env/
+frappe-bench/logs/
+frappe-bench/config/pids/
+frappe-bench/sites/assets/
+frappe-bench/sites/*/private/
+frappe-bench/sites/*/public/files/
+frappe-bench/sites/*/site_config.json
+frappe-bench/sites/*/indexes/
+frappe-bench/sites/*/.test_log
+frappe-bench/sites/*/touched_tables.json
+**/*.log
+
+# Local backups of nested repository metadata
+**/.git.nested-backup/
+
+# OS
+.DS_Store
+
+# Editor
+.vscode/
+
