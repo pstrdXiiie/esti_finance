@@ -148,7 +148,7 @@ export default function TuitionFee() {
   })
 
   return (
-    <div className="rounded-2xl border border-black/20 h-full p-7 flex flex-col">
+    <div className="rounded-2xl border border-border h-full p-7 flex flex-col">
       <div className="flex flex-wrap items-center gap-2 pb-5 shrink-0">
         <Button type="button" variant="outline" disabled={isEditing || !selected} onClick={handleEdit}>
           <PencilIcon /> Edit
@@ -270,7 +270,7 @@ export default function TuitionFee() {
         </Table>
       </div>
 
-      <div className="flex items-center justify-between border-t border-black/10 pt-4 mt-4 shrink-0">
+      <div className="flex items-center justify-between border-t border-border pt-4 mt-4 shrink-0">
         <div className="text-sm text-muted-foreground">
           {selectedIndex !== null && courses.length > 0
             ? `Record ${selectedIndex + 1} of ${courses.length}`

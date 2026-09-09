@@ -443,7 +443,7 @@ export default function NewStudentPage() {
         ← Back to Students
       </Link>
 
-      <div className="shrink-0 rounded-2xl border border-black/20 p-3">
+      <div className="shrink-0 rounded-2xl border border-border p-3">
         <h1 className="mb-2 text-lg font-semibold">Add Student</h1>
         <div className="flex items-start">
           {STEPS.map((label, idx) => (
@@ -481,7 +481,7 @@ export default function NewStudentPage() {
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-black/20 p-5">
+      <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-border p-5">
         <div className="min-h-0 flex-1 overflow-hidden">
         {currentStep === 0 && 
           <div className="grid h-full grid-rows-[1fr_auto] gap-3">

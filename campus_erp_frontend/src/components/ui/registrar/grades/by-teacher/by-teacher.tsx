@@ -86,7 +86,7 @@ export default function ByTeacher() {
   const isReady = notReadyMessage === null
 
   return (
-    <div className="rounded-2xl border border-black/20 h-full p-7">
+    <div className="rounded-2xl border border-border h-full p-7">
       <div className="flex gap-2 items-center pb-5">
         <InstructorSearch
           selected={instructor}

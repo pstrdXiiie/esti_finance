@@ -252,8 +252,8 @@ export default function Discounts() {
   const canSave = !!form.discount_code && !!form.description && !saveMutation.isPending
 
   return (
-    <div className="rounded-2xl border border-black/20 h-full p-6 grid gap-5 overflow-y-auto">
-      <div className="flex flex-wrap items-center gap-2 border-b border-black/10 pb-4">
+    <div className="rounded-2xl border border-border h-full p-6 grid gap-5 overflow-y-auto">
+      <div className="flex flex-wrap items-center gap-2 border-b border-border pb-4">
         <Button type="button" disabled={isEditing} onClick={handleAdd}>
           <PlusIcon /> Add
         </Button>
@@ -465,7 +465,7 @@ export default function Discounts() {
         </Field>
       </div>
 
-      <div className="flex items-center justify-between border-t border-black/10 pt-4 mt-auto">
+      <div className="flex items-center justify-between border-t border-border pt-4 mt-auto">
         <div className="text-sm text-muted-foreground">
           {selectedIndex !== null && discounts.length > 0
             ? `Record ${selectedIndex + 1} of ${discounts.length}`

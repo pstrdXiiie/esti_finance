@@ -381,7 +381,7 @@ export default function Classes() {
   }
 
   return (
-    <div className="rounded-2xl border border-black/20 h-full p-7">
+    <div className="rounded-2xl border border-border h-full p-7">
       <div className="flex flex-wrap gap-5 items-end pb-5">
         <div className="grid gap-1.5">
           <label htmlFor="classes-program">Course</label>

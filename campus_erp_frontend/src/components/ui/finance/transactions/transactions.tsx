@@ -13,7 +13,7 @@ export const finance_transactions = ({
   initialStudentName?: string
 } = {}) => {
   return (
-    <Tabs defaultValue={initialSubTab ?? "student-accounts"} orientation="vertical" className="flex-row items-stretch bg-white p-4 rounded-lg shadow-md w-full h-[85vh] border border-black/20">
+    <Tabs defaultValue={initialSubTab ?? "student-accounts"} orientation="vertical" className="flex-row items-stretch bg-card p-4 rounded-lg shadow-md w-full h-[85vh] border border-border">
       {/* TabsList's own base styling (ui/tabs.tsx) hard-codes h-fit for
           vertical orientation via group-data-vertical/tabs:h-fit — no
           className passed here can reliably win that cascade (same-specificity
@@ -22,103 +22,103 @@ export const finance_transactions = ({
           TabsList is left free to size to its natural (possibly taller)
           content inside it. */}
       <div className="w-70 shrink-0 min-h-0 overflow-y-auto mr-7">
-        <TabsList className="grid grid-cols-1 content-start gap-5 border-0 bg-white w-full">
-            <TabsTrigger value="student-accounts" className="w-full gap-2 p-3 border-black/20 data-active:bg-primary data-active:text-primary-foreground">
+        <TabsList className="grid grid-cols-1 content-start gap-5 border-0 bg-card w-full">
+            <TabsTrigger value="student-accounts" className="w-full gap-2 p-3 border-border data-active:bg-primary data-active:text-primary-foreground">
                 Student Accounts
             </TabsTrigger>
-            <TabsTrigger value="sundry-accounts" className="w-full gap-2 p-3 border-black/20 data-active:bg-primary data-active:text-primary-foreground">
+            <TabsTrigger value="sundry-accounts" className="w-full gap-2 p-3 border-border data-active:bg-primary data-active:text-primary-foreground">
                 Sundry Accounts
             </TabsTrigger>
-            <TabsTrigger value="purchase-requisition" className="w-full gap-2 p-3 border-black/20 data-active:bg-primary data-active:text-primary-foreground">
+            <TabsTrigger value="purchase-requisition" className="w-full gap-2 p-3 border-border data-active:bg-primary data-active:text-primary-foreground">
                 Purchase Requisition
             </TabsTrigger>
-            <TabsTrigger value="purchase-requisition-approval" className="w-full gap-2 p-3 border-black/20 data-active:bg-primary data-active:text-primary-foreground">
+            <TabsTrigger value="purchase-requisition-approval" className="w-full gap-2 p-3 border-border data-active:bg-primary data-active:text-primary-foreground">
                 Purchase Requisition Approval
             </TabsTrigger>
-            <TabsTrigger value="purchase-orders" className="w-full gap-2 p-3 border-black/20 data-active:bg-primary data-active:text-primary-foreground">
+            <TabsTrigger value="purchase-orders" className="w-full gap-2 p-3 border-border data-active:bg-primary data-active:text-primary-foreground">
                 Purchase Orders
             </TabsTrigger>
-            <TabsTrigger value="purchase-orders-receiving" className="w-full gap-2 p-3 border-black/20 data-active:bg-primary data-active:text-primary-foreground">
+            <TabsTrigger value="purchase-orders-receiving" className="w-full gap-2 p-3 border-border data-active:bg-primary data-active:text-primary-foreground">
                 Purchase Orders Receiving
             </TabsTrigger>
-            <TabsTrigger value="due-purchase-order-payable" className="w-full gap-2 p-3 border-black/20 data-active:bg-primary data-active:text-primary-foreground">
+            <TabsTrigger value="due-purchase-order-payable" className="w-full gap-2 p-3 border-border data-active:bg-primary data-active:text-primary-foreground">
                 Due Purchase Order Payable
             </TabsTrigger>
-            <div className="border-t border-black/10 my-1" />
-            <TabsTrigger value="payments-cash-receipt-entry" className="w-full gap-2 p-3 border-black/20 data-active:bg-primary data-active:text-primary-foreground">
+            <div className="border-t border-border my-1" />
+            <TabsTrigger value="payments-cash-receipt-entry" className="w-full gap-2 p-3 border-border data-active:bg-primary data-active:text-primary-foreground">
                 Payments / Cash Receipt Entry
             </TabsTrigger>
-            <TabsTrigger value="cheque-voucher-entry" className="w-full gap-2 p-3 border-black/20 data-active:bg-primary data-active:text-primary-foreground">
+            <TabsTrigger value="cheque-voucher-entry" className="w-full gap-2 p-3 border-border data-active:bg-primary data-active:text-primary-foreground">
                 Cheque Voucher Entry
             </TabsTrigger>
-            <TabsTrigger value="journal-voucher-entry" className="w-full gap-2 p-3 border-black/20 data-active:bg-primary data-active:text-primary-foreground">
+            <TabsTrigger value="journal-voucher-entry" className="w-full gap-2 p-3 border-border data-active:bg-primary data-active:text-primary-foreground">
                 Journal Voucher Entry
             </TabsTrigger>
-            <TabsTrigger value="petty-cash-voucher-entry" className="w-full gap-2 p-3 border-black/20 data-active:bg-primary data-active:text-primary-foreground">
+            <TabsTrigger value="petty-cash-voucher-entry" className="w-full gap-2 p-3 border-border data-active:bg-primary data-active:text-primary-foreground">
                 Petty Cash Voucher Entry
             </TabsTrigger>
-            <TabsTrigger value="petty-cash-voucher-canteen-entry" className="w-full gap-2 p-3 border-black/20 data-active:bg-primary data-active:text-primary-foreground">
+            <TabsTrigger value="petty-cash-voucher-canteen-entry" className="w-full gap-2 p-3 border-border data-active:bg-primary data-active:text-primary-foreground">
                 Petty Cash Voucher Canteen Entry
             </TabsTrigger>
         </TabsList>
       </div>
         <TabsContent value="student-accounts" className="mt-0 min-w-0 flex-1">
-          <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-black/20">
+          <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-border">
             test1
           </div>
         </TabsContent>
         <TabsContent value="sundry-accounts" className="mt-0 min-w-0 flex-1">
-          <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-black/20">
+          <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-border">
             test2
           </div>
         </TabsContent>
         <TabsContent value="purchase-requisition" className="mt-0 min-w-0 flex-1 overflow-y-auto">
-          <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-black/20">
+          <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-border">
             <RequisitionsListPage />
           </div>
         </TabsContent>
         <TabsContent value="purchase-requisition-approval" className="mt-0 min-w-0 flex-1">
-          <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-black/20">
+          <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-border">
             test3
           </div>
         </TabsContent>
         <TabsContent value="purchase-orders" className="mt-0 min-w-0 flex-1 overflow-y-auto">
-          <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-black/20">
+          <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-border">
             <PurchaseOrdersListPage />
           </div>
         </TabsContent>
         <TabsContent value="purchase-orders-receiving" className="mt-0 min-w-0 flex-1">
-          <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-black/20">
+          <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-border">
             test4
           </div>
         </TabsContent>
         <TabsContent value="due-purchase-order-payable" className="mt-0 min-w-0 flex-1">
-          <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-black/20">
+          <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-border">
             test5
           </div>
         </TabsContent>
         <TabsContent value="payments-cash-receipt-entry" className="mt-0 min-w-0 flex-1 overflow-y-auto">
-          <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-black/20">
+          <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-border">
             <PaymentsCashReceipt initialStudentName={initialStudentName} />
           </div>
         </TabsContent>
         <TabsContent value="cheque-voucher-entry" className="mt-0 min-w-0 flex-1">
-          <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-black/20">
+          <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-border">
             test7
           </div>
         </TabsContent>
         <TabsContent value="journal-voucher-entry" className="mt-0 min-w-0 flex-1">
-          <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-black/20">
+          <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-border">
             test8
           </div>
         </TabsContent>
         <TabsContent value="petty-cash-voucher-entry" className="mt-0 min-w-0 flex-1">
-          <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-black/20">
+          <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-border">
             test9
           </div>
         </TabsContent>
         <TabsContent value="petty-cash-voucher-canteen-entry" className="mt-0 min-w-0 flex-1 overflow-y-auto">
-          <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-black/20">
+          <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-border">
             <CanteenPcvListPage />
           </div>
         </TabsContent>

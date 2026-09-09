@@ -161,8 +161,8 @@ export default function PaymentsCashReceipt({
   const canSave = canPay && !!amount && Number(amount) > 0 && !paymentMutation.isPending
 
   return (
-    <div className="rounded-2xl border border-black/20 h-full p-6 flex flex-col gap-5 overflow-y-auto">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-black/10 pb-4">
+    <div className="rounded-2xl border border-border h-full p-6 flex flex-col gap-5 overflow-y-auto">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-4">
         <h2 className="text-lg font-semibold">Cash Receipt Transaction</h2>
         <Button type="button" variant="outline" onClick={resetForNewPayment}>
           New Payment

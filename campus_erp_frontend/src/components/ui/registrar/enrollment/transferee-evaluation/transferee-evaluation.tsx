@@ -184,7 +184,7 @@ export default function TransfereeEvaluation() {
   const isReady = notReadyMessage === null
 
   return (
-    <div className="rounded-2xl border border-black/20 h-full p-7">
+    <div className="rounded-2xl border border-border h-full p-7">
       <div className="flex items-start w-full pb-5">
         <StudentSearch
           selected={student}
@@ -268,7 +268,7 @@ export default function TransfereeEvaluation() {
           )}
 
             {showAddForm && (
-              <div className="grid gap-3 rounded-md border border-black/20 p-4">
+              <div className="grid gap-3 rounded-md border border-border p-4">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   <div className="grid gap-1">
                     <label htmlFor="transferee-school">School</label>

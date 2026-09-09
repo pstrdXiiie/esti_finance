@@ -104,7 +104,7 @@ export default function WithdrawalOfEnrollment() {
   const isReady = notReadyMessage === null
 
   return (
-    <div className="rounded-2xl border border-black/20 h-full p-7">
+    <div className="rounded-2xl border border-border h-full p-7">
       <div className="flex items-start w-full pb-5">
         <StudentSearch
           selected={student}

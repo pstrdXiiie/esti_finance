@@ -109,7 +109,7 @@ export default function OldStudentGrades() {
   const isReady = notReadyMessage === null
 
   return (
-    <div className="rounded-2xl border border-black/20 h-full p-7">
+    <div className="rounded-2xl border border-border h-full p-7">
       <div className="flex gap-5 items-end pb-5">
         <div className="grid gap-1.5">
           <label htmlFor="old-student-grades-school-year">School Year</label>
@@ -154,9 +154,9 @@ export default function OldStudentGrades() {
           <TableHeader>
             <TableRow>
               <TableHead>Student</TableHead>
-              <TableHead>Course</TableHead>
+              <TableHead className="max-w-48">Course</TableHead>
               <TableHead>Subject Code</TableHead>
-              <TableHead>Program</TableHead>
+              <TableHead className="max-w-56">Program</TableHead>
               <TableHead>School Year</TableHead>
               <TableHead>Prelim</TableHead>
               <TableHead>Midterm</TableHead>
@@ -175,9 +175,13 @@ export default function OldStudentGrades() {
                   <TableCell className="font-medium">
                     {row.student_name}
                   </TableCell>
-                  <TableCell>{row.course_name}</TableCell>
+                  <TableCell className="max-w-48 truncate" title={row.course_name}>
+                    {row.course_name}
+                  </TableCell>
                   <TableCell>{row.subject_code ?? "—"}</TableCell>
-                  <TableCell>{row.program}</TableCell>
+                  <TableCell className="max-w-56 truncate" title={row.program}>
+                    {row.program}
+                  </TableCell>
                   <TableCell>{formatAcademicYearLabel(row.academic_year)}</TableCell>
                   <TableCell>{row.prelim ?? "—"}</TableCell>
                   <TableCell>{row.midterm ?? "—"}</TableCell>

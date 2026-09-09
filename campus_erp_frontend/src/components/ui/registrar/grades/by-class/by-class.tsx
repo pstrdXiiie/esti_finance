@@ -81,7 +81,7 @@ export default function ByClass() {
   const isReady = notReadyMessage === null
 
   return (
-    <div className="rounded-2xl border border-black/20 h-full p-7">
+    <div className="rounded-2xl border border-border h-full p-7">
       <div className="grid max-w-sm gap-2 pb-5">
         <label className="text-sm font-medium" htmlFor="by-class-group">
           Class (Student Group)

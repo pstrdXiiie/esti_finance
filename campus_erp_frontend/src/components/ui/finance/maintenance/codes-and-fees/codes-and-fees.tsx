@@ -236,7 +236,7 @@ export default function CodesAndFees() {
   const canSave = isFormOpen && (isAddingHeader ? !!newParticular : true) && !saveMutation.isPending
 
   return (
-    <div className="rounded-2xl border border-black/20 h-full p-7 flex flex-col">
+    <div className="rounded-2xl border border-border h-full p-7 flex flex-col">
       <div className="flex flex-wrap items-end gap-4 pb-10 shrink-0">
         <Field id="fee-code-type" label="Code Type">
           <Select

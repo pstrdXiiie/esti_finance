@@ -173,7 +173,7 @@ export default function GraduatingStudents() {
   const isLoadingRoster = computeQuery.isFetching || batchQuery.isFetching
 
   return (
-    <div className="rounded-2xl border border-black/20 h-full p-7">
+    <div className="rounded-2xl border border-border h-full p-7">
       <div className="grid md:grid-cols-2 gap-4 w-full pb-5">
         <div className="flex gap-2 items-baseline">
           <label htmlFor="grad-course">Course</label>

@@ -60,7 +60,7 @@ export default function PreRegistrationRecord() {
   const records = preEnrollmentsQuery.data ?? []
 
   return (
-    <div className="rounded-2xl border border-black/20 h-full p-7">
+    <div className="rounded-2xl border border-border h-full p-7">
       <div className="flex gap-2 items-center pb-5">
         <StudentSearch
           selected={student}
@@ -119,7 +119,7 @@ export default function PreRegistrationRecord() {
               </div>
 
               <div className="flex justify-end mt-3">
-                <div className="rounded-lg border border-black/20 px-4 py-2 text-right">
+                <div className="rounded-lg border border-border px-4 py-2 text-right">
                   <div className="text-xs text-muted-foreground">Total Units</div>
                   <div className="text-xl font-bold">{record.total_units}</div>
                 </div>
@@ -167,7 +167,7 @@ export default function PreRegistrationRecord() {
           </div>
 
           <div className="flex justify-end mt-3">
-            <div className="rounded-lg border border-black/20 px-4 py-2 text-right">
+            <div className="rounded-lg border border-border px-4 py-2 text-right">
               <div className="text-xs text-muted-foreground">Total Units</div>
               <div className="text-xl font-bold text-muted-foreground">—</div>
             </div>

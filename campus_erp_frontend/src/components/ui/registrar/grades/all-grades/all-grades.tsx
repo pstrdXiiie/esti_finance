@@ -251,7 +251,7 @@ export default function AllGrades() {
   }
 
   return (
-    <div className="rounded-2xl border border-black/20 h-full p-7 print:h-auto print:border-0 print:p-0">
+    <div className="rounded-2xl border border-border h-full p-7 print:h-auto print:border-0 print:p-0">
       <div className="flex flex-wrap gap-5 items-end pb-5 print:hidden">
         <div className="grid gap-1.5">
           <label htmlFor="all-grades-school-year">School Year</label>
@@ -306,9 +306,9 @@ export default function AllGrades() {
           <TableHeader>
             <TableRow>
               <TableHead className="min-w-48">Student</TableHead>
-              <TableHead>Subject Name</TableHead>
+              <TableHead className="max-w-48">Subject Name</TableHead>
               <TableHead>Subject Code</TableHead>
-              <TableHead>Course</TableHead>
+              <TableHead className="max-w-56">Course</TableHead>
               <TableHead>School Year</TableHead>
               <TableHead>Prelim</TableHead>
               <TableHead>Midterm</TableHead>
@@ -344,9 +344,13 @@ export default function AllGrades() {
                       {row.student_name}
                     </button>
                   </TableCell>
-                  <TableCell>{row.course_name}</TableCell>
+                  <TableCell className="max-w-48 truncate" title={row.course_name}>
+                    {row.course_name}
+                  </TableCell>
                   <TableCell>{row.subject_code ?? "—"}</TableCell>
-                  <TableCell>{row.program}</TableCell>
+                  <TableCell className="max-w-56 truncate" title={row.program}>
+                    {row.program}
+                  </TableCell>
                   <TableCell>{formatAcademicYearLabel(row.academic_year)}</TableCell>
                   <TableCell>{row.prelim ?? "—"}</TableCell>
                   <TableCell>{row.midterm ?? "—"}</TableCell>

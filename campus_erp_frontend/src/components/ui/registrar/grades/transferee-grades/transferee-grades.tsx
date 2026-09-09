@@ -92,7 +92,7 @@ export default function TransfereeGrades() {
   const isReady = notReadyMessage === null
 
   return (
-    <div className="rounded-2xl border border-black/20 h-full p-7">
+    <div className="rounded-2xl border border-border h-full p-7">
       <div className="overflow-x-auto rounded-md border">
         <Table>
           <TableHeader>
