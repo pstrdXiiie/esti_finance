@@ -138,7 +138,7 @@ export default function StatutoryReportsPage() {
   const canGenerate = !!reportType && !!batchMonth && !!company && !generateMutation.isPending
 
   return (
-    <div className="grid gap-6">
+    <div className="rounded-2xl border border-border h-full p-7 overflow-y-auto grid gap-6">
       <div>
         <h1 className="text-2xl font-semibold">Statutory Reports</h1>
         <p className="text-muted-foreground">

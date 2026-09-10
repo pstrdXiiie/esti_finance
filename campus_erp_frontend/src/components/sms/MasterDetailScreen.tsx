@@ -22,7 +22,8 @@ import {
 } from "lucide-react"
 
 import { frappe, getErrorMessage } from "@/lib/frappe"
-import type { FieldSpec, FormSpec } from "@/lib/forms/types"
+import type { FieldSpec, FormSpec, WizardLayout } from "@/lib/forms/types"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -54,6 +55,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Form } from "@/components/ui/form"
+import { WizardFormLayout } from "@/components/sms/WizardFormLayout"
 import { DynamicField } from "@/components/sms/DynamicField"
 
 const PAGE_SIZE = 10
@@ -131,7 +133,7 @@ function findCascadeTarget(
  * The ~115 legacy Master/Detail screens (blueprint §5.1): a list view plus an
  * Add/Edit detail panel, backed by one Frappe DocType.
  */
-export function MasterDetailScreen({ spec }: { spec: FormSpec }) {
+export function MasterDetailScreen({ spec }: { spec: FormSpec & { wizard?: WizardLayout } }) {
   const router = useRouter()
   const queryClient = useQueryClient()
   const [editing, setEditing] = useState<Record<string, unknown> | null>(null)
@@ -144,6 +146,8 @@ export function MasterDetailScreen({ spec }: { spec: FormSpec }) {
   const [filterValue, setFilterValue] = useState("")
   const [sort, setSort] = useState<{ field: string; dir: "asc" | "desc" } | null>(null)
   const [page, setPage] = useState(1)
+
+  const wizard = spec.wizard
 
   const listColumns = spec.fields.filter((f) => f.inListView)
   const columns = listColumns.length ? listColumns : spec.fields.slice(0, 4)
@@ -682,7 +686,7 @@ export function MasterDetailScreen({ spec }: { spec: FormSpec }) {
       )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="w-full max-w-2xl sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className={cn("w-full max-h-[85vh] overflow-y-auto max-w-2xl", wizard && "sm:max-w-3xl")}>
           <DialogHeader>
             <DialogTitle>
               {editing ? `Edit ${spec.title}` : `New ${spec.title}`}
@@ -695,36 +699,40 @@ export function MasterDetailScreen({ spec }: { spec: FormSpec }) {
               )}
               className="grid gap-6"
             >
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {groupFieldsBySection(dialogFields).map((group, idx) =>
-                  group.section ? (
-                    <div
-                      key={group.section}
-                      className="relative rounded-md border p-3 pt-4 sm:col-span-2"
-                    >
-                      <span className="absolute -top-2.5 left-3 bg-card px-1 text-xs font-medium">
-                        {group.section}
-                      </span>
-                      {group.section === spec.relatedRecord?.section && !relatedRecordName && (
-                        <p className="mb-2 text-xs text-muted-foreground">
-                          {spec.relatedRecord.missingRecordHint}
-                        </p>
-                      )}
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {wizard ? (
+                <WizardFormLayout spec={spec} layout={wizard} control={form.control} />
+              ) : (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  {groupFieldsBySection(dialogFields).map((group, idx) =>
+                    group.section ? (
+                      <div
+                        key={group.section}
+                        className="relative rounded-md border p-3 pt-4 sm:col-span-2"
+                      >
+                        <span className="absolute -top-2.5 left-3 bg-card px-1 text-xs font-medium">
+                          {group.section}
+                        </span>
+                        {group.section === spec.relatedRecord?.section && !relatedRecordName && (
+                          <p className="mb-2 text-xs text-muted-foreground">
+                            {spec.relatedRecord.missingRecordHint}
+                          </p>
+                        )}
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          {group.fields.map((f) => (
+                            <DynamicField key={f.fieldname} control={form.control} spec={f} />
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div key={`ungrouped-${idx}`} className="contents">
                         {group.fields.map((f) => (
                           <DynamicField key={f.fieldname} control={form.control} spec={f} />
                         ))}
                       </div>
-                    </div>
-                  ) : (
-                    <div key={`ungrouped-${idx}`} className="contents">
-                      {group.fields.map((f) => (
-                        <DynamicField key={f.fieldname} control={form.control} spec={f} />
-                      ))}
-                    </div>
-                  )
-                )}
-              </div>
+                    )
+                  )}
+                </div>
+              )}
               <Button type="submit" disabled={saveMutation.isPending}>
                 {saveMutation.isPending ? "Saving…" : "Save"}
               </Button>

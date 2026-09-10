@@ -82,6 +82,8 @@ export interface FormSpec {
 export interface ChildTableSpec {
   fieldname: string
   doctype: string
+  /** Section/table heading — used when a child table is the entire body of a wizard step (e.g. "Leave Records", "Loans"), rather than a sibling of other fields. */
+  title?: string
   columns: FieldSpec[]
 }
 
@@ -101,4 +103,61 @@ export interface ReportSpec {
   title: string
   filters: FieldSpec[]
   columns: Array<{ fieldname: string; label: string; width?: number }>
+}
+
+export interface WizardStepSection {
+  title?: string
+  fieldnames: string[]
+  columns?: 1 | 2 | 3 | 4
+}
+
+export interface WizardStepColumn {
+  /** "main" renders wide (left), "sidebar" renders narrow (right). */
+  span: "main" | "sidebar"
+  sections: WizardStepSection[]
+}
+
+export interface WizardStepDialog {
+  buttonLabel: string
+  title: string
+  /** Subset of the parent spec's own fields, shown flat inside the dialog. Mutually exclusive with childTable. */
+  fieldnames?: string[]
+  /** A full child-table grid inside the dialog instead of flat fields. Mutually exclusive with fieldnames. */
+  childTable?: ChildTableSpec
+}
+
+/**
+ * Step body precedence (WizardFormLayout.tsx must follow this order):
+ *   1. columns    — two-region layout; when set, sections/fieldnames on the
+ *                   step itself are ignored (put them inside columns[].sections instead)
+ *   2. sections   — section-grouped flat fields
+ *   3. fieldnames — plain flat field grid, no section grouping
+ *   4. childTable — rendered IN ADDITION to whichever of the above is present;
+ *                   a step can have fields AND a child table, or just a child table
+ *   `dialog` is independent of all of the above — it renders as a trigger
+ *   button at the end of the step regardless of which body variant is used,
+ *   and does not by itself satisfy the "not built yet" check below.
+ * A step with none of columns / sections / fieldnames.length / childTable
+ * renders the "not built yet" placeholder, even if `dialog` is set.
+ */
+export interface WizardStep {
+  key: string
+  label: string
+  /** Flat field list — used when the step doesn't need section grouping. */
+  fieldnames: string[]
+  fieldColumns?: 1 | 2 | 3 | 4
+  /** Section-grouped layout — takes priority over `fieldnames` when present. */
+  sections?: WizardStepSection[]
+  /** Two-region (main/sidebar) layout — takes priority over `sections` and `fieldnames` when present. */
+  columns?: WizardStepColumn[]
+  /** A child table rendered alongside (or as the entirety of) the step's body. */
+  childTable?: ChildTableSpec
+  /** A button that opens a small dialog scoped to this step (e.g. "Policy", "View Infractions"). */
+  dialog?: WizardStepDialog
+  /** Shown instead of fields when a step has nothing built yet. */
+  note?: string
+}
+
+export interface WizardLayout {
+  steps: WizardStep[]
 }
