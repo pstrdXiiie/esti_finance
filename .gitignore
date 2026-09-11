@@ -35,6 +35,15 @@ frappe-bench/sites/*/touched_tables.json
 # OS
 .DS_Store
 
+# Personal shell and agent files
+/.bash_history
+/.bash_logout
+/.bashrc
+/.profile
+/.sudo_as_admin_successful
+/.claude/
+/.yarnrc
+
 # Editor
 .vscode/
 
