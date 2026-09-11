@@ -48,6 +48,10 @@ export const assetSpec: EntrySpec = {
     { fieldname: "warranty_date", label: "Warranty Expiry", fieldtype: "Date" },
     { fieldname: "branch", label: "Branch", fieldtype: "Link", options: "Branch" },
     { fieldname: "remarks", label: "Remarks", fieldtype: "Small Text" },
+    { fieldname: "description", label: "Description", fieldtype: "Small Text" },
+    { fieldname: "salvage_value", label: "Salvage Value", fieldtype: "Currency" },
+    { fieldname: "estimated_useful_life_months", label: "Estimated Useful Life (Months)", fieldtype: "Int" },
+    { fieldname: "daily_rate", label: "Daily Rate", fieldtype: "Currency" },
   ],
 }
 

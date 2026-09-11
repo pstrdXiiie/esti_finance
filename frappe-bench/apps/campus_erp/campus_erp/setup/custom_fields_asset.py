@@ -28,6 +28,13 @@ CUSTOM_FIELDS = {
 			"description": "Skipped for library book items per the migration blueprint", "insert_after": "column_break_sms_asset_1"},
 		{"fieldname": "branch", "label": "Branch", "fieldtype": "Link", "options": "Branch", "insert_after": "warranty_date"},
 		{"fieldname": "remarks", "label": "Remarks", "fieldtype": "Small Text", "insert_after": "branch"},
+		# Fixed Asset Entry (Asset & Property tab) fields carried over from the
+		# legacy desktop screen — not covered by any of the above.
+		{"fieldname": "description", "label": "Description", "fieldtype": "Small Text", "insert_after": "remarks"},
+		{"fieldname": "column_break_sms_asset_2", "fieldtype": "Column Break", "insert_after": "description"},
+		{"fieldname": "salvage_value", "label": "Salvage Value", "fieldtype": "Currency", "insert_after": "column_break_sms_asset_2"},
+		{"fieldname": "estimated_useful_life_months", "label": "Estimated Useful Life (Months)", "fieldtype": "Int", "insert_after": "salvage_value"},
+		{"fieldname": "daily_rate", "label": "Daily Rate", "fieldtype": "Currency", "insert_after": "estimated_useful_life_months"},
 	],
 	"Asset Movement": [
 		{"fieldname": "sms_movement_section", "fieldtype": "Section Break", "label": "Officers & Notes (PH)", "insert_after": "column_break_9"},

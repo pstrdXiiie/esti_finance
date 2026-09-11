@@ -2,6 +2,7 @@ import Link from "next/link"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { enrollmentComponent } from "@/components/ui/registrar/enrollment/enrollment"
 import { gradesComponent } from "@/components/ui/registrar/grades/grades"
+import { reportsComponent } from "@/components/ui/registrar/reports/reports"
 import { registrar_maintenance } from "@/components/ui/registrar/maintenance/maintenance"
 import FacultySchedule from "@/components/ui/registrar/faculty-schedule/faculty-schedule"
 import Classes from "@/components/ui/registrar/classes/classes"
@@ -41,7 +42,7 @@ export default function RegistrarPage() {
   return (
     <div>
       <Tabs defaultValue="enrollment" className="h-full">
-        <TabsList className="grid w-full grid-cols-6 h-full gap-2 border-0 bg-sidebar p-1 h-full! rounded-3xl items-center print:hidden">
+        <TabsList className="grid w-full grid-cols-6 gap-2 border-0 bg-sidebar p-1 h-full! rounded-3xl items-center print:hidden">
           <TabsTrigger value="enrollment" className="text-foreground hover:text-foreground data-active:bg-primary data-active:text-primary-foreground pt-2 pb-2 rounded-2xl">
             Enrollment
           </TabsTrigger>
@@ -73,33 +74,13 @@ export default function RegistrarPage() {
         <TabsContent value="faculty-schedule">
           <FacultySchedule />
         </TabsContent>
-        <TabsContent value="reports">Reports content goes here.</TabsContent>
+        <TabsContent value="reports" className="min-w-0">
+          {reportsComponent()}
+        </TabsContent>
         <TabsContent value="maintenance">
           {registrar_maintenance()}
         </TabsContent>
       </Tabs>
-
-
-    
-      <div className="print:hidden">
-        <h1 className="text-2xl font-semibold">Registrar</h1>
-        <p className="text-muted-foreground">
-          Student records, curriculum, enrollment, and exam permits.
-        </p>
-      </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 print:hidden">
-        {SCREENS.map((s) => (
-          <Link key={s.href} href={s.href}>
-            <Card className="h-full transition-colors hover:bg-muted/40">
-              <CardHeader>
-                <CardTitle>{s.title}</CardTitle>
-                <CardDescription>{s.description}</CardDescription>
-              </CardHeader>
-            </Card>
-          </Link>
-        ))}
-      </div>
-      
 
     </div>
   )

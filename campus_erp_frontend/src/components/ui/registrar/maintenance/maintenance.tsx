@@ -9,7 +9,7 @@ import Rooms from "@/components/ui/registrar/maintenance/rooms/rooms"
 
 export const registrar_maintenance = () => {
   return (
-    <Tabs defaultValue="account" orientation="vertical" className="flex-row items-stretch bg-card p-4 rounded-lg shadow-md w-full h-[85vh] border border-border">
+    <Tabs defaultValue="account" orientation="vertical" className="flex-row items-stretch bg-card p-4 rounded-lg shadow-md w-full h-[78vh] border border-border">
       <TabsList className="grid w-70 grid-cols-1 gap-5 border-0 bg-card mr-7 h-[50vh]! shrink-0">
             <TabsTrigger value="students-masterfile" className="w-full gap-2 p-3 border-border data-active:bg-primary data-active:text-primary-foreground">
                 Students Masterfile

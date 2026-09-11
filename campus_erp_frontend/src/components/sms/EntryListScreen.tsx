@@ -1,11 +1,13 @@
 "use client"
 
 import Link from "next/link"
+import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 
 import { frappe } from "@/lib/frappe"
 import type { EntrySpec } from "@/lib/forms/types"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
   Table,
   TableBody,
@@ -15,6 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Search } from "lucide-react";
 
 /**
  * List view for EntryScreen-backed doctypes (SMS Curriculum, SMS Permit, …):
@@ -29,6 +32,7 @@ export function EntryListScreen({
   /** Route this list lives under, e.g. "/registrar/curriculum". */
   basePath: string
 }) {
+  const [search, setSearch] = useState("")
   const listColumns = spec.fields.filter((f) => f.inListView)
   const columns = listColumns.length ? listColumns : spec.fields.slice(0, 4)
 
@@ -41,11 +45,33 @@ export function EntryListScreen({
       }),
   })
 
+  const filteredData = (data ?? []).filter((row) =>
+    !search.trim() ||
+      columns.some((c) =>
+        String(row[c.fieldname] ?? "").toLowerCase().includes(search.toLowerCase())
+      )
+  )
+
+  {filteredData.length === 0 && (
+    <TableCell colSpan={columns.length} className="text-muted-foreground text-center">
+      {search.trim() ? "No matching records." : "No records yet."}
+    </TableCell>
+  )}
+
   return (
     <div className="grid gap-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">{spec.title}</h1>
         <Button render={<Link href={`${basePath}/new`} />}>Add {spec.title}</Button>
+      </div>
+      <div className="relative max-w-sm">
+        <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder={`Search ${spec.title.toLowerCase()}…`}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-8"
+        />
       </div>
 
       {isLoading ? (

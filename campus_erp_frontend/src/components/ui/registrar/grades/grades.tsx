@@ -9,7 +9,7 @@ import OldStudentGrades from './old-student-grades/old-student-grades'
 
 export const gradesComponent = () => {
   return (
-    <Tabs defaultValue="all-grades" orientation="vertical" className="flex-row items-stretch bg-card p-4 rounded-lg shadow-md w-full h-[85vh] border border-border print:h-auto print:border-0 print:shadow-none print:p-0">
+    <Tabs defaultValue="all-grades" orientation="vertical" className="flex-row items-stretch bg-card p-4 rounded-lg shadow-md w-full h-[78vh] border border-border print:h-auto print:border-0 print:shadow-none print:p-0">
       <TabsList className="grid w-48 grid-cols-1 gap-5 border-0 bg-card mr-4 h-[50vh]! shrink-0 print:hidden">
             <TabsTrigger value="all-grades" className="w-full gap-2 p-3 border-border data-active:bg-primary data-active:text-primary-foreground">
                 All Grades

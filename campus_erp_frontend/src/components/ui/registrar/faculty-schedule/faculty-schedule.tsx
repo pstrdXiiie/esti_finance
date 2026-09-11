@@ -66,7 +66,7 @@ export default function FacultySchedule() {
   const isReady = notReadyMessage === null
 
   return (
-    <div className="rounded-2xl border border-border h-full p-7">
+    <div className="flex-row items-stretch bg-card p-4 rounded-lg shadow-md w-full h-[78vh] border border-border">
       <div className="flex gap-2 items-center pb-5">
         <InstructorSearch
           selected={instructor}

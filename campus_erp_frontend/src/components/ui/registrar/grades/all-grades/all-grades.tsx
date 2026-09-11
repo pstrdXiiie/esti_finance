@@ -77,8 +77,19 @@ interface SelectedStudent {
   academic_year: string
 }
 
-const COLUMN_COUNT = 13
+const COLUMN_COUNT = 5
 const DETAIL_COLUMN_COUNT = 6
+
+// "status" lives on Course Enrollment (one per subject), so collapsing to
+// one row per student needs a rule for picking a single overall value:
+// prefer "Enrolled" (still in progress) over "Dropped" (needs attention)
+// over "Completed", so a student with any active subject still reads as
+// enrolled.
+const STATUS_PRIORITY: Record<string, number> = {
+  Enrolled: 0,
+  Dropped: 1,
+  Completed: 2,
+}
 
 /**
  * All Grades tab: every grade record on file, filterable by School Year and
@@ -150,6 +161,27 @@ export default function AllGrades() {
           (row.stdnt_cno ?? "").toLowerCase().includes(trimmedSearch)
       )
     : rows
+
+  // Collapse the per-subject grade records down to one row per student per
+  // enrollment period (student + Course + School Year) — the table reports
+  // enrollment status, not individual subject grades, so a student taking
+  // 4 subjects should read as 1 row, not 4.
+  const studentRows = Array.from(
+    filteredRows
+      .reduce((byStudent, row) => {
+        const key = `${row.student}::${row.program}::${row.academic_year}`
+        const existing = byStudent.get(key)
+        if (
+          !existing ||
+          (STATUS_PRIORITY[row.status] ?? 99) <
+            (STATUS_PRIORITY[existing.status] ?? 99)
+        ) {
+          byStudent.set(key, row)
+        }
+        return byStudent
+      }, new Map<string, GradeRow>())
+      .values()
+  )
 
   // Same "always show the table shell" treatment as the rest of the Grades
   // tab: one not-ready message drives the placeholder row instead of hiding
@@ -306,58 +338,38 @@ export default function AllGrades() {
           <TableHeader>
             <TableRow>
               <TableHead className="min-w-48">Student</TableHead>
-              <TableHead className="max-w-48">Subject Name</TableHead>
-              <TableHead>Subject Code</TableHead>
               <TableHead className="max-w-56">Course</TableHead>
               <TableHead>School Year</TableHead>
-              <TableHead>Prelim</TableHead>
-              <TableHead>Midterm</TableHead>
-              <TableHead>Final</TableHead>
-              <TableHead>Final Rating</TableHead>
-              <TableHead>Remarks</TableHead>
-              <TableHead>Points</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Student Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isReady &&
-              filteredRows.map((row) => (
-                <TableRow key={row.name}>
-                  <TableCell className="font-medium p-0 min-w-48">
-                    <button
-                      type="button"
-                      className="w-full h-full px-2 py-2 text-left hover:underline hover:bg-muted/50 cursor-pointer print:pointer-events-none"
-                      onClick={() =>
-                        setSelectedStudent({
-                          name: row.student,
-                          student_name: row.student_name,
-                          stdnt_cno: row.stdnt_cno,
-                          program: row.program,
-                          year_level: row.year_level,
-                          semester: row.semester,
-                          academic_year: row.academic_year,
-                        })
-                      }
-                      title="View all grades for this student"
-                    >
-                      {row.student_name}
-                    </button>
+              studentRows.map((row) => (
+                <TableRow
+                  key={row.name}
+                  className="cursor-pointer hover:bg-muted/50 print:pointer-events-none"
+                  onClick={() =>
+                    setSelectedStudent({
+                      name: row.student,
+                      student_name: row.student_name,
+                      stdnt_cno: row.stdnt_cno,
+                      program: row.program,
+                      year_level: row.year_level,
+                      semester: row.semester,
+                      academic_year: row.academic_year,
+                    })
+                  }
+                  title="View all grades for this student"
+                >
+                  <TableCell className="font-medium min-w-48">
+                    {row.student_name}
                   </TableCell>
-                  <TableCell className="max-w-48 truncate" title={row.course_name}>
-                    {row.course_name}
-                  </TableCell>
-                  <TableCell>{row.subject_code ?? "—"}</TableCell>
                   <TableCell className="max-w-56 truncate" title={row.program}>
                     {row.program}
                   </TableCell>
                   <TableCell>{formatAcademicYearLabel(row.academic_year)}</TableCell>
-                  <TableCell>{row.prelim ?? "—"}</TableCell>
-                  <TableCell>{row.midterm ?? "—"}</TableCell>
-                  <TableCell>{row.final ?? "—"}</TableCell>
-                  <TableCell>{row.final_rating ?? "—"}</TableCell>
-                  <TableCell>{row.grade_remarks ?? "—"}</TableCell>
-                  <TableCell>{row.points ?? "—"}</TableCell>
                   <TableCell>
                     <Badge variant={row.status === "Completed" ? "secondary" : "outline"}>
                       {row.status}
@@ -372,7 +384,7 @@ export default function AllGrades() {
                   </TableCell>
                 </TableRow>
               ))}
-            {isReady && filteredRows.length === 0 && (
+            {isReady && studentRows.length === 0 && (
               <TableRow>
                 <TableCell
                   colSpan={COLUMN_COUNT}

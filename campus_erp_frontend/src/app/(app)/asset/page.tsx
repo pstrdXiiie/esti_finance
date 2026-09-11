@@ -1,10 +1,13 @@
 import Link from "next/link"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Card,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import FixedAssetEntry from "@/components/ui/asset/fixed-asset-entry/fixed-asset-entry";
+
 
 const SCREENS = [
   {
@@ -42,6 +45,43 @@ const SCREENS = [
 export default function AssetPage() {
   return (
     <div className="grid gap-4">
+      <Tabs defaultValue="fixed-asset-entry" className="h-full">
+        <TabsList className="grid w-full grid-cols-5 h-full gap-2 border-0 bg-sidebar p-1 h-full! rounded-3xl items-center print:hidden">
+          <TabsTrigger value="fixed-asset-entry" className="text-foreground hover:text-foreground data-active:bg-primary data-active:text-primary-foreground pt-2 pb-2 rounded-2xl">
+            Fixed Asset Entry
+          </TabsTrigger>
+          <TabsTrigger value="dispatch" className="text-foreground hover:text-foreground data-active:bg-primary data-active:text-primary-foreground pt-2 pb-2 rounded-2xl">
+            Dispatch Item
+          </TabsTrigger>
+          <TabsTrigger value="item-disposal" className="text-foreground hover:text-foreground data-active:bg-primary data-active:text-primary-foreground pt-2 pb-2 rounded-2xl">
+            Item Disposal / Transfer
+          </TabsTrigger>
+          <TabsTrigger value="reports" className="text-foreground hover:text-foreground data-active:bg-primary data-active:text-primary-foreground pt-2 pb-2 rounded-2xl">
+            Reports
+          </TabsTrigger>
+          <TabsTrigger value="asset-maintenance" className="text-foreground hover:text-foreground data-active:bg-primary data-active:text-primary-foreground pt-2 pb-2 rounded-2xl">
+            Asset Maintenance
+          </TabsTrigger>
+
+        </TabsList>
+        <TabsContent value="fixed-asset-entry">
+          <FixedAssetEntry />
+        </TabsContent>
+        <TabsContent value="dispatch" className="min-w-0">
+          Tab2 content goes here.
+        </TabsContent>
+        <TabsContent value="item-disposal" className="min-w-0">
+          Tab3 content goes here.
+        </TabsContent>
+        <TabsContent value="reports">
+          Tab4 content goes here.
+        </TabsContent>
+        <TabsContent value="asset-maintenance">
+          Tab6 content goes here.
+        </TabsContent>
+      </Tabs>
+
+
       <div>
         <h1 className="text-2xl font-semibold">Asset & Property</h1>
         <p className="text-muted-foreground">
