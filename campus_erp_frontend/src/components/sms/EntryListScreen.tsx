@@ -62,7 +62,7 @@ export function EntryListScreen({
     <div className="grid gap-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">{spec.title}</h1>
-        <Button render={<Link href={`${basePath}/new`} />}>Add {spec.title}</Button>
+        <Button render={<Link href={`${basePath}/new`} />} nativeButton={false}>Add {spec.title}</Button>
       </div>
       <div className="relative max-w-sm">
         <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />

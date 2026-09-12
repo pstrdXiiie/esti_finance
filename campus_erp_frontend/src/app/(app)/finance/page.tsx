@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/card"
 import finance_maintenance from "@/components/ui/finance/maintenance/maintenance";
 import finance_transactions from "@/components/ui/finance/transactions/transactions";
+import ChartOfAccountsListPage from "@/app/(app)/finance/chartsofaccounts/page"
+import FinancialReportPage from "@/app/(app)/finance/financialreport/page"
 
 const SCREENS = [
   {
@@ -63,13 +65,13 @@ function FinancePageContent() {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="enrollment">
-          test
+          <ChartOfAccountsListPage />
         </TabsContent>
         <TabsContent value="grades" className="min-w-0">
           {finance_transactions({ initialSubTab, initialStudentName })}
         </TabsContent>
         <TabsContent value="classes" className="min-w-0">
-          test
+          <FinancialReportPage />
         </TabsContent>
         <TabsContent value="maintenance">
           {finance_maintenance()}

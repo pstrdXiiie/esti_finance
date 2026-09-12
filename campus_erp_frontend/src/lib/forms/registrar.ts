@@ -101,3 +101,51 @@ export const permitSpec: EntrySpec = {
     ],
   },
 }
+
+
+export const curriculumSpec: EntrySpec = {
+  doctype: "SMS Curriculum",
+  title: "Curriculum",
+  fields: [
+    { fieldname: "curriculum_code", label: "Curriculum Code", fieldtype: "Data", required: true },
+    { fieldname: "course", label: "Program", fieldtype: "Link", options: "Program", required: true },
+    { fieldname: "curriculum_year", label: "Curriculum Year", fieldtype: "Data" },
+    {
+      fieldname: "sem_type",
+      label: "Term Structure",
+      fieldtype: "Select",
+      options: "Quarter\nPrelim-Midterm-Finals\nTrisemester\nFull Payment Only",
+    },
+    { fieldname: "max_units", label: "Max Units per Term", fieldtype: "Float" },
+    { fieldname: "is_active", label: "Is Current Curriculum", fieldtype: "Check" },
+  ],
+  childTable: {
+    fieldname: "subjects",
+    doctype: "SMS Curriculum Subject",
+    columns: [
+      { fieldname: "year_level", label: "Year Level", fieldtype: "Int", required: true },
+      { fieldname: "semester", label: "Semester", fieldtype: "Int", required: true },
+      { fieldname: "subject", label: "Subject", fieldtype: "Link", options: "Course", required: true },
+      { fieldname: "prerequisite", label: "Prerequisite", fieldtype: "Link", options: "Course" },
+    ],
+  },
+}
+
+
+export const studentcredentialSpec: FormSpec = {
+  doctype: "SMS Student Credentials",
+  title: "Credentials",
+  fields: [
+    { fieldname: "student", label: "Student", fieldtype: "Link", options: "Student", required: true, section: "details", inListView: true },
+    { fieldname: "date_encoded", label: "Date Encoded", fieldtype: "Date", section: "details", inListView: true },
+    { fieldname: "encoder", label: "Encoder", fieldtype: "Link", options: "Encoder", required: true, section: "details", inListView: true },
+
+    { fieldname: "psa_birth_certificate", label: "PSA Birth Certificate", fieldtype: "Check", required: true, section: "credentials" },
+    { fieldname: "certificate_of_good_moral", label: "Certificate of Good Moral", fieldtype: "Check", required: true, section: "credentials" },
+    { fieldname: "transcript_of_record", label: "Transcript of Record", fieldtype: "Check", required: true, section: "credentials" },
+    { fieldname: "ncae", label: "NCAE", fieldtype: "Check", required: true, section: "credentials" },
+    { fieldname: "form_138", label: "Form 138", fieldtype: "Check", required: true, section: "credentials" },
+    { fieldname: "form_137", label: "Form 137", fieldtype: "Check", required: true, section: "credentials" },
+  ],
+}
+

@@ -69,6 +69,8 @@ export default function PaymentsCashReceipt({
 
   const [student, setStudent] = useState<StudentOption | null>(null)
   const [selectedAssessment, setSelectedAssessment] = useState("")
+  const [paymentMode, setPaymentMode] = useState<"assessment" | "other">("assessment")
+  const [accountCharged, setAccountCharged] = useState("")
   const [amount, setAmount] = useState("")
   const [modeOfPayment, setModeOfPayment] = useState<ModeOfPayment>("Cash")
   const [referenceNo, setReferenceNo] = useState("")
@@ -118,6 +120,17 @@ export default function PaymentsCashReceipt({
 
   const assessments = assessmentsQuery.data ?? []
 
+  const accountsQuery = useQuery({
+    queryKey: ["Account", "leaf", "for-payment"],
+    queryFn: () =>
+      frappe.list<{ name: string }>("Account", {
+        fields: ["name"],
+        filters: [["is_group", "=", 0]],
+        limit_page_length: 500,
+      }),
+  })
+  const accounts = accountsQuery.data ?? []
+
   const [syncedStudentForAssessment, setSyncedStudentForAssessment] = useState<string | undefined>(undefined)
   if (student && student.name !== syncedStudentForAssessment && assessmentsQuery.isFetched) {
     setSyncedStudentForAssessment(student.name)
@@ -126,7 +139,10 @@ export default function PaymentsCashReceipt({
   }
 
   const assessment = assessments.find((a) => a.name === selectedAssessment) ?? null
-  const canPay = !!assessment && assessment.docstatus === 1
+  const canPay =
+    paymentMode === "assessment"
+      ? !!assessment && assessment.docstatus === 1
+      : !!student && !!accountCharged
 
   function resetForNewPayment() {
     setStudent(null)
@@ -135,19 +151,32 @@ export default function PaymentsCashReceipt({
     setModeOfPayment("Cash")
     setReferenceNo("")
     setLastOrNumber(null)
+    setPaymentMode("assessment")
+    setAccountCharged("")
   }
 
   const paymentMutation = useMutation({
     mutationFn: () =>
-      frappe.call<{ payment_entry: string; assessment_payment: number; assessment_receivable: number }>(
-        "campus_erp.api.finance_billing.record_payment",
-        {
-          assessment: assessment!.name,
-          amount: Number(amount),
-          mode_of_payment: modeOfPayment,
-          reference_no: referenceNo || undefined,
-        }
-      ),
+      paymentMode === "assessment"
+        ? frappe.call<{ payment_entry: string; assessment_payment: number; assessment_receivable: number }>(
+            "campus_erp.api.finance_billing.record_payment",
+            {
+              assessment: assessment!.name,
+              amount: Number(amount),
+              mode_of_payment: modeOfPayment,
+              reference_no: referenceNo || undefined,
+            }
+          )
+        : frappe.call<{ payment_entry: string }>(
+            "campus_erp.api.finance_billing.record_payment_other_than_assessment",
+            {
+              student: student!.name,
+              account_charged: accountCharged,
+              amount: Number(amount),
+              mode_of_payment: modeOfPayment,
+              reference_no: referenceNo || undefined,
+            }
+          ),
     onSuccess: async (result) => {
       toast.success(`Payment recorded — OR# ${result.payment_entry}`)
       setLastOrNumber(result.payment_entry)
@@ -171,11 +200,21 @@ export default function PaymentsCashReceipt({
 
       <div className="flex flex-wrap gap-6">
         <label className="flex items-center gap-2 text-sm">
-          <input type="radio" className="h-4 w-4" checked readOnly />
+          <input
+            type="radio"
+            className="h-4 w-4"
+            checked={paymentMode === "assessment"}
+            onChange={() => setPaymentMode("assessment")}
+          />
           Student Payment (From Assessment)
         </label>
-        <label className="flex items-center gap-2 text-sm text-muted-foreground" title="Not yet available — record payments against an Assessment for now">
-          <input type="radio" className="h-4 w-4" disabled />
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="radio"
+            className="h-4 w-4"
+            checked={paymentMode === "other"}
+            onChange={() => setPaymentMode("other")}
+          />
           Student Payment (Other than Assessment)
         </label>
       </div>
@@ -185,7 +224,7 @@ export default function PaymentsCashReceipt({
           <StudentSearch selected={student} onSelect={setStudent} idPrefix="cash-receipt" />
         </Field>
 
-        {assessments.length > 1 && (
+        {paymentMode === "assessment" && assessments.length > 1 && (
           <Field label="Assessment (School Year - Semester)">
             <Select value={selectedAssessment} onValueChange={(v) => setSelectedAssessment(v ?? "")}>
               <SelectTrigger className="w-full">
@@ -203,48 +242,67 @@ export default function PaymentsCashReceipt({
         )}
       </div>
 
-      {student && assessmentsQuery.isFetching && (
+      {paymentMode === "assessment" && student && assessmentsQuery.isFetching && (
         <div className="text-sm text-muted-foreground">Loading…</div>
       )}
 
-      {student && !assessmentsQuery.isFetching && assessments.length === 0 && (
+      {paymentMode === "assessment" && student && !assessmentsQuery.isFetching && assessments.length === 0 && (
         <div className="rounded-md border p-4 text-sm text-muted-foreground">
           {student.student_name} has no assessment on record yet — prescribe classes and create an
           assessment first (Registrar &gt; Enrollment &gt; Pre-Enrollment).
         </div>
       )}
 
-      {assessment && assessment.docstatus === 0 && (
+      {paymentMode === "assessment" && assessment && assessment.docstatus === 0 && (
         <div className="rounded-md border p-4 text-sm text-muted-foreground">
           This assessment hasn&apos;t been submitted yet — submit it under Finance &gt; Student
           Assessments before recording a payment.
         </div>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2 max-w-3xl rounded-md border p-4">
-        <Field label="Course">
-          <div className="text-sm font-medium">{assessment?.program ?? "—"}</div>
-        </Field>
-        <Field label="School Year / Semester">
-          <div className="text-sm font-medium">
-            {assessment
-              ? `${formatAcademicYearLabel(assessment.school_year)} — Sem ${assessment.semester}`
-              : "—"}
-          </div>
-        </Field>
-        <Field label="Assessment">
-          <div className="text-sm font-medium">₱{formatCurrency(assessment?.total_fee)}</div>
-        </Field>
-        <Field label="Total Payments">
-          <div className="text-sm font-medium">₱{formatCurrency(assessment?.payment)}</div>
-        </Field>
-        <Field label="Payment Due (Balance)">
-          <div className="text-sm font-semibold">₱{formatCurrency(assessment?.receivable)}</div>
-        </Field>
-        <Field label="Account Charged">
-          <div className="text-sm font-medium">{assessment?.receivable_account || "—"}</div>
-        </Field>
-      </div>
+      {paymentMode === "assessment" ? (
+        <div className="grid gap-4 md:grid-cols-2 max-w-3xl rounded-md border p-4">
+          <Field label="Course">
+            <div className="text-sm font-medium">{assessment?.program ?? "—"}</div>
+          </Field>
+          <Field label="School Year / Semester">
+            <div className="text-sm font-medium">
+              {assessment
+                ? `${formatAcademicYearLabel(assessment.school_year)} — Sem ${assessment.semester}`
+                : "—"}
+            </div>
+          </Field>
+          <Field label="Assessment">
+            <div className="text-sm font-medium">₱{formatCurrency(assessment?.total_fee)}</div>
+          </Field>
+          <Field label="Total Payments">
+            <div className="text-sm font-medium">₱{formatCurrency(assessment?.payment)}</div>
+          </Field>
+          <Field label="Payment Due (Balance)">
+            <div className="text-sm font-semibold">₱{formatCurrency(assessment?.receivable)}</div>
+          </Field>
+          <Field label="Account Charged">
+            <div className="text-sm font-medium">{assessment?.receivable_account || "—"}</div>
+          </Field>
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 max-w-3xl rounded-md border p-4">
+          <Field label="Account Charged">
+            <Select value={accountCharged} onValueChange={(v) => setAccountCharged(v ?? "")}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select an account…" />
+              </SelectTrigger>
+              <SelectContent>
+                {accounts.map((a) => (
+                  <SelectItem key={a.name} value={a.name}>
+                    {a.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+        </div>
+      )}
 
       <div className="grid gap-4 max-w-3xl">
         <div className="grid gap-4 md:grid-cols-4">

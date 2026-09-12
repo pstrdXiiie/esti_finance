@@ -1,0 +1,15 @@
+{
+ "doctype": "DocType",
+ "name": "SMS Due Purchase Order Payable GL Entry",
+ "module": "Finance",
+ "istable": 1,
+ "editable_grid": 1,
+ "fields": [
+  {"fieldname": "account", "label": "Account", "fieldtype": "Link", "options": "Chart of Account", "in_list_view": 1, "reqd": 1},
+  {"fieldname": "account_number", "label": "Acct #", "fieldtype": "Data", "read_only": 1, "fetch_from": "account.account_number", "in_list_view": 1},
+  {"fieldname": "account_name", "label": "Acct Name", "fieldtype": "Data", "read_only": 1, "fetch_from": "account.account_name", "in_list_view": 1},
+  {"fieldname": "debit", "label": "Debit", "fieldtype": "Currency", "in_list_view": 1},
+  {"fieldname": "credit", "label": "Credit", "fieldtype": "Currency", "in_list_view": 1}
+ ],
+ "permissions": []
+}

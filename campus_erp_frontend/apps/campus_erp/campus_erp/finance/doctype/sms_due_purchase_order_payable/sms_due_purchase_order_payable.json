@@ -1,0 +1,41 @@
+{
+ "doctype": "DocType",
+ "name": "SMS Due Purchase Order Payable",
+ "module": "Finance",
+ "autoname": "field:po_num",
+ "naming_rule": "By fieldname",
+ "is_submittable": 0,
+ "fields": [
+  {"fieldname": "po_num", "label": "PO #", "fieldtype": "Link", "options": "SMS Purchase Order", "reqd": 1, "in_list_view": 1},
+  {"fieldname": "date_po_posted", "label": "Date PO Posted", "fieldtype": "Date", "read_only": 1, "fetch_from": "po_num.po_date"},
+  {"fieldname": "column_break_1", "fieldtype": "Column Break"},
+  {"fieldname": "terms", "label": "Terms", "fieldtype": "Select", "options": "\nCash\nNet 15\nNet 30\nNet 60\nCOD"},
+  {"fieldname": "si_number", "label": "S.I. Number", "fieldtype": "Data"},
+
+  {"fieldname": "section_break_2", "fieldtype": "Section Break"},
+  {"fieldname": "pay_to", "label": "Pay to", "fieldtype": "Link", "options": "Supplier", "reqd": 1},
+  {"fieldname": "column_break_3", "fieldtype": "Column Break"},
+  {"fieldname": "tax_percent", "label": "Tax %", "fieldtype": "Percent", "default": "0"},
+  {"fieldname": "column_break_4", "fieldtype": "Column Break"},
+  {"fieldname": "amount", "label": "Amount", "fieldtype": "Currency", "default": "0"},
+
+  {"fieldname": "section_break_5", "fieldtype": "Section Break"},
+  {"fieldname": "check_number", "label": "Check Number", "fieldtype": "Data"},
+  {"fieldname": "column_break_6", "fieldtype": "Column Break"},
+  {"fieldname": "check_date", "label": "Check Date", "fieldtype": "Date"},
+
+  {"fieldname": "notes", "label": "Notes", "fieldtype": "Small Text"},
+
+  {"fieldname": "gl_section", "label": "General Ledger Entries", "fieldtype": "Section Break"},
+  {"fieldname": "accounts", "label": "Accounts", "fieldtype": "Table", "options": "SMS Due Purchase Order Payable GL Entry"},
+  {"fieldname": "column_break_7", "fieldtype": "Column Break"},
+  {"fieldname": "total_debit", "label": "Total DR", "fieldtype": "Currency", "read_only": 1},
+  {"fieldname": "total_credit", "label": "Total CR", "fieldtype": "Currency", "read_only": 1},
+
+  {"fieldname": "status", "label": "Status", "fieldtype": "Select", "options": "Draft\nPosted\nCancelled", "default": "Draft", "read_only": 1}
+ ],
+ "permissions": [
+  {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "submit": 0, "cancel": 0, "report": 1},
+  {"role": "Accounts Manager", "read": 1, "write": 1, "create": 1, "delete": 0, "report": 1}
+ ]
+}

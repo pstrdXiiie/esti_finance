@@ -4,6 +4,14 @@ import RequisitionsListPage from "@/app/(app)/finance/requisitions/page"
 import PurchaseOrdersListPage from "@/app/(app)/finance/purchase-orders/page"
 import CanteenPcvListPage from "@/app/(app)/finance/canteen-pcv/page"
 import PaymentsCashReceipt from "@/components/ui/finance/transactions/payments-cash-receipt/payments-cash-receipt"
+import ChequeVoucherEntryPage from "@/app/(app)/finance/transactions/cheque_voucher_entry/page"
+import StudentAccountsListPage from "@/app/(app)/finance/transactions/student_acc/page"
+import SundryAccountListPage from "@/app/(app)/finance/transactions/sundry_acc/page"
+import PurchaseRequisitionApprovalPage from "@/app/(app)/finance/transactions/purchase_requisition_approval/page"
+import PurchaseOrderReceivingPage from "@/app/(app)/finance/transactions/purchase_order_receiving/page"
+import AccountsPayablePage from "@/app/(app)/finance/transactions/due_purchase_order_payables/page"
+import JournalVoucherEntryPage from "@/app/(app)/finance/transactions/journal_voucher_entry/page"
+import PettyCashEntryPage from "@/app/(app)/finance/transactions/petty_cash_entry/page"
 
 export const finance_transactions = ({
   initialSubTab,
@@ -64,12 +72,12 @@ export const finance_transactions = ({
       </div>
         <TabsContent value="student-accounts" className="mt-0 min-w-0 flex-1">
           <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-border">
-            test1
+            <StudentAccountsListPage />
           </div>
         </TabsContent>
         <TabsContent value="sundry-accounts" className="mt-0 min-w-0 flex-1">
           <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-border">
-            test2
+            <SundryAccountListPage />
           </div>
         </TabsContent>
         <TabsContent value="purchase-requisition" className="mt-0 min-w-0 flex-1 overflow-y-auto">
@@ -79,7 +87,7 @@ export const finance_transactions = ({
         </TabsContent>
         <TabsContent value="purchase-requisition-approval" className="mt-0 min-w-0 flex-1">
           <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-border">
-            test3
+            <PurchaseRequisitionApprovalPage />
           </div>
         </TabsContent>
         <TabsContent value="purchase-orders" className="mt-0 min-w-0 flex-1 overflow-y-auto">
@@ -89,12 +97,12 @@ export const finance_transactions = ({
         </TabsContent>
         <TabsContent value="purchase-orders-receiving" className="mt-0 min-w-0 flex-1">
           <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-border">
-            test4
+            <PurchaseOrderReceivingPage />
           </div>
         </TabsContent>
         <TabsContent value="due-purchase-order-payable" className="mt-0 min-w-0 flex-1">
           <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-border">
-            test5
+            <AccountsPayablePage />
           </div>
         </TabsContent>
         <TabsContent value="payments-cash-receipt-entry" className="mt-0 min-w-0 flex-1 overflow-y-auto">
@@ -104,17 +112,17 @@ export const finance_transactions = ({
         </TabsContent>
         <TabsContent value="cheque-voucher-entry" className="mt-0 min-w-0 flex-1">
           <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-border">
-            test7
+            <ChequeVoucherEntryPage />
           </div>
         </TabsContent>
         <TabsContent value="journal-voucher-entry" className="mt-0 min-w-0 flex-1">
           <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-border">
-            test8
+            <JournalVoucherEntryPage />
           </div>
         </TabsContent>
         <TabsContent value="petty-cash-voucher-entry" className="mt-0 min-w-0 flex-1">
           <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-border">
-            test9
+            <PettyCashEntryPage />
           </div>
         </TabsContent>
         <TabsContent value="petty-cash-voucher-canteen-entry" className="mt-0 min-w-0 flex-1 overflow-y-auto">
