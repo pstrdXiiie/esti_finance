@@ -686,7 +686,17 @@ export function MasterDetailScreen({ spec }: { spec: FormSpec & { wizard?: Wizar
       )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className={cn("w-full max-h-[85vh] overflow-y-auto max-w-2xl", wizard && "sm:max-w-3xl")}>
+        <DialogContent
+          className={cn(
+            // DialogContent's own base classes set `sm:max-w-sm` — an
+            // unscoped `max-w-*` here doesn't win the cascade against that
+            // sm: variant (twMerge only dedupes same-variant conflicts), so
+            // the override must carry a matching `sm:` prefix to actually
+            // take effect at any real viewport width.
+            "w-full max-h-[85vh] overflow-y-auto max-w-2xl sm:max-w-3xl",
+            wizard && "sm:max-w-4xl"
+          )}
+        >
           <DialogHeader>
             <DialogTitle>
               {editing ? `Edit ${spec.title}` : `New ${spec.title}`}
