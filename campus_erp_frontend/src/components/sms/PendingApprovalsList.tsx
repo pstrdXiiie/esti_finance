@@ -8,12 +8,12 @@ import { frappe } from "@/lib/frappe"
 import type { EntrySpec } from "@/lib/forms/types"
 import { Input } from "@/components/ui/input"
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -36,104 +36,104 @@ import { Skeleton } from "@/components/ui/skeleton"
  * without any per-doctype wiring.
  */
 export function PendingApprovalsList({
-  spec,
-  basePath,
-  pendingStatuses,
-  title,
+    spec,
+    basePath,
+    pendingStatuses,
+    title,
 }: {
-  spec: EntrySpec
-  basePath: string
-  /** Status values considered "still pending" — everything else is excluded. */
-  pendingStatuses: string[]
-  title?: string
+    spec: EntrySpec
+    basePath: string
+    /** Status values considered "still pending" — everything else is excluded. */
+    pendingStatuses: string[]
+    title?: string
 }) {
-  const [search, setSearch] = useState("")
+    const [search, setSearch] = useState("")
 
-  const listColumns = spec.fields.filter((f) => f.inListView)
-  const columns = listColumns.length ? listColumns : spec.fields.slice(0, 4)
+    const listColumns = spec.fields.filter((f) => f.inListView)
+    const columns = listColumns.length ? listColumns : spec.fields.slice(0, 4)
 
-  const { data, isLoading } = useQuery({
-    queryKey: [spec.doctype, "pending", pendingStatuses],
-    queryFn: () =>
-      frappe.list(spec.doctype, {
-        filters: [["status", "in", pendingStatuses]],
-        fields: ["name", ...spec.fields.map((f) => f.fieldname)],
-        order_by: "modified desc",
-        limit_page_length: 100,
-      }),
-  })
+    const { data, isLoading } = useQuery({
+        queryKey: [spec.doctype, "pending", pendingStatuses],
+        queryFn: () =>
+            frappe.list(spec.doctype, {
+                filters: [["status", "in", pendingStatuses]],
+                fields: ["name", ...spec.fields.map((f) => f.fieldname)],
+                order_by: "modified desc",
+                limit_page_length: 100,
+            }),
+    })
 
-  const rows = data ?? []
-  const trimmedSearch = search.trim().toLowerCase()
-  const filteredRows = trimmedSearch
-    ? rows.filter((row) =>
-        columns.some((c) =>
-          String(row[c.fieldname] ?? "").toLowerCase().includes(trimmedSearch)
+    const rows = data ?? []
+    const trimmedSearch = search.trim().toLowerCase()
+    const filteredRows = trimmedSearch
+        ? rows.filter((row) =>
+            columns.some((c) =>
+                String(row[c.fieldname] ?? "").toLowerCase().includes(trimmedSearch)
+            )
         )
-      )
-    : rows
+        : rows
 
-  return (
-    <div className="grid gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold">{title ?? `Pending ${spec.title}`}</h2>
-        <Input
-          placeholder={`Search ${spec.title.toLowerCase()}…`}
-          className="max-w-xs"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
-      {isLoading ? (
-        <Skeleton className="h-48 w-full" />
-      ) : (
-        <div className="overflow-x-auto rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                {columns.map((c) => (
-                  <TableHead key={c.fieldname}>{c.label}</TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredRows.map((row) => (
-                <TableRow key={String(row.name)}>
-                  {columns.map((c, i) => {
-                    const value =
-                      c.fieldname === "status" ? (
-                        <Badge variant="outline">{String(row[c.fieldname] ?? "")}</Badge>
-                      ) : (
-                        String(row[c.fieldname] ?? row.name)
-                      )
-                    return (
-                      <TableCell key={c.fieldname}>
-                        {i === 0 ? (
-                          <Link
-                            href={`${basePath}/${encodeURIComponent(String(row.name))}`}
-                            className="font-medium hover:underline"
-                          >
-                            {value}
-                          </Link>
-                        ) : (
-                          value
-                        )}
-                      </TableCell>
-                    )
-                  })}
-                </TableRow>
-              ))}
-              {filteredRows.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={columns.length} className="text-muted-foreground text-center">
-                    {trimmedSearch ? "No matches for this search." : "Nothing pending."}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+    return (
+        <div className="grid gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 className="text-lg font-semibold">{title ?? `Pending ${spec.title}`}</h2>
+                <Input
+                    placeholder={`Search ${spec.title.toLowerCase()}…`}
+                    className="max-w-xs"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                />
+            </div>
+            {isLoading ? (
+                <Skeleton className="h-48 w-full" />
+            ) : (
+                <div className="overflow-x-auto rounded-md border">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                {columns.map((c) => (
+                                    <TableHead key={c.fieldname}>{c.label}</TableHead>
+                                ))}
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {filteredRows.map((row) => (
+                                <TableRow key={String(row.name)}>
+                                    {columns.map((c, i) => {
+                                        const value =
+                                            c.fieldname === "status" ? (
+                                                <Badge variant="outline">{String(row[c.fieldname] ?? "")}</Badge>
+                                            ) : (
+                                                String(row[c.fieldname] ?? row.name)
+                                            )
+                                        return (
+                                            <TableCell key={c.fieldname}>
+                                                {i === 0 ? (
+                                                    <Link
+                                                        href={`${basePath}/${encodeURIComponent(String(row.name))}`}
+                                                        className="font-medium hover:underline"
+                                                    >
+                                                        {value}
+                                                    </Link>
+                                                ) : (
+                                                    value
+                                                )}
+                                            </TableCell>
+                                        )
+                                    })}
+                                </TableRow>
+                            ))}
+                            {filteredRows.length === 0 && (
+                                <TableRow>
+                                    <TableCell colSpan={columns.length} className="text-muted-foreground text-center">
+                                        {trimmedSearch ? "No matches for this search." : "Nothing pending."}
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
+            )}
         </div>
-      )}
-    </div>
-  )
+    )
 }

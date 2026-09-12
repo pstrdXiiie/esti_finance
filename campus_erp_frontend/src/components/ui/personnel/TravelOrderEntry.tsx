@@ -10,6 +10,7 @@ import { travelOrderSpec } from "@/lib/forms/personnel"
 import { Button } from "@/components/ui/button"
 import { Form } from "@/components/ui/form"
 import { DynamicField } from "@/components/sms/DynamicField"
+import { EmployeeSearchField } from "@/components/ui/personnel/EmployeeSearchField"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -118,9 +119,13 @@ export function TravelOrderEntry({ docName }: { docName?: string }) {
             className="grid gap-6"
           >
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {travelOrderSpec.fields.map((f) => (
-                <DynamicField key={f.fieldname} control={form.control} spec={f} />
-              ))}
+              {travelOrderSpec.fields.map((f) =>
+                f.fieldname === "employee" ? (
+                  <EmployeeSearchField key={f.fieldname} control={form.control} label={f.label} idPrefix={f.fieldname} />
+                ) : (
+                  <DynamicField key={f.fieldname} control={form.control} spec={f} />
+                )
+              )}
             </div>
             <Button type="submit" className="w-fit" disabled={saveMutation.isPending}>
               {saveMutation.isPending ? "Saving…" : "Save"}

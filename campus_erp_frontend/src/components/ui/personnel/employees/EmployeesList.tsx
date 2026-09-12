@@ -1,15 +1,22 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { PencilIcon, PlusIcon, Trash2Icon } from "lucide-react"
+import { FilterIcon, PencilIcon, PlusIcon, SearchIcon, Trash2Icon, XIcon } from "lucide-react"
 
 import { frappe, getErrorMessage } from "@/lib/frappe"
 import { employeeSpec } from "@/lib/forms/personnel"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   Table,
   TableBody,
@@ -23,6 +30,11 @@ import { Skeleton } from "@/components/ui/skeleton"
 type EmployeeRow = Record<string, string> & { name: string }
 
 const listColumns = employeeSpec.fields.filter((f) => f.inListView)
+// Same restriction MasterDetailScreen applies to its free-text search box —
+// only text-ish/lookup columns are searched, not Int/Date/Check/etc.
+const searchableColumns = listColumns.filter((c) =>
+  ["Data", "Text", "Small Text", "Link", "Select"].includes(c.fieldtype)
+)
 
 interface EmployeesListProps {
   /** Route prefix for add/detail navigation, e.g. "/personnel/employees". */
@@ -30,32 +42,32 @@ interface EmployeesListProps {
 }
 
 /**
- * Pure list + navigation — no local wizard/panel state anymore. Add routes
- * to `${basePath}/new`, each row routes to `${basePath}/${name}`, matching
- * the same isNew-sentinel convention already used by loans/benefits/etc.
- * (see 05-PERSONNEL-IMPLEMENTATION-PLAN.md). "View" and "Edit" are no
- * longer separate actions — the detail page (EmployeeDetailTabs) is
- * editable inline, so there's a single Open action plus Delete.
- * Shared by both the Employees tab in personnel/page.tsx and the
- * standalone /personnel/employees route.
+ * Pure list + navigation. Add routes to `${basePath}/new`, each row routes
+ * to `${basePath}/${name}` (see 05-PERSONNEL-IMPLEMENTATION-PLAN.md).
+ *
+ * Search + Filter bar mirrors MasterDetailScreen.tsx's (see
+ * registrar/students) exactly: a magnifying-glass search box filtering
+ * across the searchable list columns, plus a "Filter" toggle that reveals a
+ * column picker + "value contains" box for narrowing to one specific
+ * column. Employees can't use MasterDetailScreen itself — Add opens a
+ * multi-step wizard and each row opens a tabbed detail page, not
+ * MasterDetailScreen's single-dialog add/edit — so this reproduces just its
+ * search/filter behavior client-side over the fetched rows.
  */
 export function EmployeesList({ basePath }: EmployeesListProps) {
   const router = useRouter()
   const queryClient = useQueryClient()
-  const [search, setSearch] = useState("")
 
-  const { data: rows, isLoading } = useQuery({
-    queryKey: [employeeSpec.doctype, "list", search],
+  const [search, setSearch] = useState("")
+  const [filterOpen, setFilterOpen] = useState(false)
+  const [filterField, setFilterField] = useState("")
+  const [filterValue, setFilterValue] = useState("")
+
+  const { data, isLoading } = useQuery({
+    queryKey: [employeeSpec.doctype, "list"],
     queryFn: () =>
       frappe.list<EmployeeRow>(employeeSpec.doctype, {
         fields: ["name", ...employeeSpec.fields.map((f) => f.fieldname)],
-        or_filters: search
-          ? [
-              ["employee_id", "like", `%${search}%`],
-              ["first_name", "like", `%${search}%`],
-              ["last_name", "like", `%${search}%`],
-            ]
-          : undefined,
         order_by: "modified desc",
         limit_page_length: 100,
       }),
@@ -70,19 +82,82 @@ export function EmployeesList({ basePath }: EmployeesListProps) {
     onError: (error) => toast.error(`Could not delete: ${getErrorMessage(error)}`),
   })
 
+  function applyFilter(field: string, value: string) {
+    setFilterField(field)
+    setFilterValue(value)
+  }
+
+  const filteredRows = useMemo(() => {
+    let rows = data ?? []
+
+    if (search.trim()) {
+      const needle = search.trim().toLowerCase()
+      const haystack = searchableColumns.length ? searchableColumns : listColumns
+      rows = rows.filter((row) =>
+        haystack.some((c) => String(row[c.fieldname] ?? "").toLowerCase().includes(needle))
+      )
+    }
+
+    if (filterField && filterValue.trim()) {
+      const needle = filterValue.trim().toLowerCase()
+      rows = rows.filter((row) => String(row[filterField] ?? "").toLowerCase().includes(needle))
+    }
+
+    return rows
+  }, [data, search, filterField, filterValue])
+
   return (
     <div className="rounded-2xl border border-border h-full p-7 flex flex-col gap-5">
       <div className="flex items-center justify-between gap-3">
-        <Input
-          placeholder="Search employees…"
-          className="max-w-sm"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative max-w-xs">
+            <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search employees..."
+              className="pl-8"
+            />
+          </div>
+          <Button type="button" variant="outline" onClick={() => setFilterOpen((v) => !v)}>
+            <FilterIcon />
+            Filter
+          </Button>
+          {filterField && filterValue.trim() && (
+            <Button type="button" variant="ghost" size="sm" onClick={() => applyFilter("", "")}>
+              Clear filter
+              <XIcon />
+            </Button>
+          )}
+        </div>
         <Button type="button" onClick={() => router.push(`${basePath}/new`)}>
           <PlusIcon /> Add Employee
         </Button>
       </div>
+
+      {filterOpen && (
+        <div className="flex flex-wrap items-center gap-2 rounded-md border p-3">
+          <Select value={filterField} onValueChange={(value) => applyFilter(value ?? "", filterValue)}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Filter by column" />
+            </SelectTrigger>
+            <SelectContent>
+              {listColumns.map((c) => (
+                <SelectItem key={c.fieldname} value={c.fieldname}>
+                  {c.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Input
+            value={filterValue}
+            onChange={(e) => applyFilter(filterField, e.target.value)}
+            placeholder="Value contains..."
+            disabled={!filterField}
+            className="w-48"
+          />
+        </div>
+      )}
 
       <div className="overflow-x-auto rounded-md border">
         <Table>
@@ -101,14 +176,14 @@ export function EmployeesList({ basePath }: EmployeesListProps) {
                   <Skeleton className="h-24 w-full" />
                 </TableCell>
               </TableRow>
-            ) : (rows ?? []).length === 0 ? (
+            ) : filteredRows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={listColumns.length + 1} className="text-muted-foreground text-center">
-                  No employees yet.
+                  {data && data.length > 0 ? "No employees match these filters." : "No employees yet."}
                 </TableCell>
               </TableRow>
             ) : (
-              (rows ?? []).map((row) => (
+              filteredRows.map((row) => (
                 <TableRow
                   key={row.name}
                   className="cursor-pointer"

@@ -79,7 +79,6 @@ export function LeaveApplicationsPanel() {
     return (
         <div className="grid gap-6 w-full">
             <div className="w-full rounded-2xl border border-border p-7">
-                <h2 className="text-lg font-semibold mb-5">New Leave Application</h2>
                 <Form {...form}>
                     <form
                         onSubmit={form.handleSubmit((values) => addMutation.mutate(values))}

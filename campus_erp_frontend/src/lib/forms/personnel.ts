@@ -48,7 +48,11 @@ export const employeeBenefitSpec: EntrySpec = {
   title: "Employee Benefit",
   submittable: true,
   fields: [
-    { fieldname: "employee", label: "Employee", fieldtype: "Link", options: "Employee", required: true, inListView: true },
+    // FIX: was `options: "Employee"` — that ERPNext doctype has zero
+    // records in this system (confirmed via `frappe.db.count("Employee")`
+    // returning 0). Every real HR record here lives on the custom
+    // `Personnel Info` doctype instead (see employeeSpec below).
+    { fieldname: "employee", label: "Employee", fieldtype: "Link", options: "Personnel Info", required: true, inListView: true },
     {
       fieldname: "petty_cash_voucher",
       label: "Petty Cash Voucher",
@@ -91,7 +95,8 @@ export const loanApplicationSpec: EntrySpec = {
   title: "Loan Application",
   submittable: true,
   fields: [
-    { fieldname: "employee", label: "Employee", fieldtype: "Link", options: "Employee", required: true, inListView: true },
+    // FIX: was `options: "Employee"` — see employeeBenefitSpec's comment above.
+    { fieldname: "employee", label: "Employee", fieldtype: "Link", options: "Personnel Info", required: true, inListView: true },
     { fieldname: "loan_type", label: "Loan Type", fieldtype: "Link", options: "SMS Loan Type", required: true, inListView: true },
     { fieldname: "amount", label: "Amount", fieldtype: "Currency", required: true, inListView: true },
     { fieldname: "reason", label: "Reason", fieldtype: "Small Text", required: true },
@@ -118,7 +123,8 @@ export const employeeLoanSpec: EntrySpec = {
   doctype: "SMS Employee Loan",
   title: "Employee Loan",
   fields: [
-    { fieldname: "employee", label: "Employee", fieldtype: "Link", options: "Employee", required: true, inListView: true },
+    // FIX: was `options: "Employee"` — see employeeBenefitSpec's comment above.
+    { fieldname: "employee", label: "Employee", fieldtype: "Link", options: "Personnel Info", required: true, inListView: true },
     { fieldname: "loan_type", label: "Loan Type", fieldtype: "Link", options: "SMS Loan Type", required: true },
     { fieldname: "loan_application", label: "Loan Application", fieldtype: "Link", options: "SMS Loan Application" },
     { fieldname: "gross_amount", label: "Gross Amount", fieldtype: "Currency", required: true, inListView: true },
@@ -144,7 +150,8 @@ export const travelOrderSpec: EntrySpec = {
   title: "Travel Order",
   submittable: true,
   fields: [
-    { fieldname: "employee", label: "Employee", fieldtype: "Link", options: "Employee", required: true, inListView: true },
+    // FIX: was `options: "Employee"` — see employeeBenefitSpec's comment above.
+    { fieldname: "employee", label: "Employee", fieldtype: "Link", options: "Personnel Info", required: true, inListView: true },
     { fieldname: "start_date", label: "Start Date", fieldtype: "Date", required: true, inListView: true },
     { fieldname: "end_date", label: "End Date", fieldtype: "Date", required: true },
     { fieldname: "purpose", label: "Purpose", fieldtype: "Small Text", required: true },
@@ -173,7 +180,7 @@ export const employeeSpec: FormSpec = {
     { fieldname: "last_name", label: "Last Name", fieldtype: "Data", required: true, inListView: true },
     { fieldname: "middle_name", label: "Middle Name", fieldtype: "Data" },
     { fieldname: "title", label: "Title", fieldtype: "Data" },
-    { fieldname: "department", label: "Department", fieldtype: "Select", options: "ADMINISTRATION DEPARTMENT\nCOMPUTER SCIENCE DEPARTMENT\nELECTRONICS DEPARTMENT\nFinance\nGENERAL SERVICES DEPARTMENT\nHIGH SCHOOL DEPARTMENT\nHOTEL&RESTAURANT DEPARTMENT\nHuman Resources\nMARINE DEPT.\nProperty Custodian\nRegistrar\nSCIENCE DEPARTMENT\nTOURISM DEPARTMENT", inListView: true },
+    { fieldname: "department", label: "Department", fieldtype: "Link", options: "SMS Personnel Departments", inListView: true, dropdown: true },
     { fieldname: "employee_status", label: "Employee Status", fieldtype: "Select", options: "Contractual\nPart Timer\nProbationary\nRegular", inListView: true },
     { fieldname: "work_status", label: "Work Status", fieldtype: "Select", options: "In Active\nActive\nExecutive\nConsultant", inListView: true },
     { fieldname: "date_hired", label: "Date Hired", fieldtype: "Date", inListView: true },
@@ -261,7 +268,8 @@ export const overtimeSpec: EntrySpec = {
   title: "Overtime",
   submittable: true,
   fields: [
-    { fieldname: "employee", label: "Employee", fieldtype: "Link", options: "Employee", required: true, inListView: true },
+    // FIX: was `options: "Employee"` — see employeeBenefitSpec's comment above.
+    { fieldname: "employee", label: "Employee", fieldtype: "Link", options: "Personnel Info", required: true, inListView: true },
     { fieldname: "overtime_date", label: "Overtime Date", fieldtype: "Date", required: true, inListView: true },
     { fieldname: "time_from", label: "Time From", fieldtype: "Time", required: true },
     { fieldname: "time_to", label: "Time To", fieldtype: "Time", required: true },

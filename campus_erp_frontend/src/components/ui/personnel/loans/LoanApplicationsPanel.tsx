@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Form } from "@/components/ui/form"
 import { DynamicField } from "@/components/sms/DynamicField"
+import { EmployeeSearchField } from "@/components/ui/personnel/EmployeeSearchField"
 import {
   Select,
   SelectContent,
@@ -67,7 +68,7 @@ const listColumns = employeeLoanSpec.fields.filter((f) => f.inListView)
  * Loans-tab landing view (docName undefined) or the per-record editor at
  * its own URL.
  */
-export function EmployeeLoanEntry({ docName }: { docName?: string }) {
+export function LoanApplicationsPanel({ docName }: { docName?: string }) {
   const queryClient = useQueryClient()
   const router = useRouter()
 
@@ -118,17 +119,19 @@ export function EmployeeLoanEntry({ docName }: { docName?: string }) {
   return (
     <div className="grid gap-6 w-full">
       <div className="w-full rounded-2xl border border-border p-7">
-        <h1 className="text-2xl font-semibold mb-5">{employeeLoanSpec.title}</h1>
-
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit((values) => saveMutation.mutate(values))}
             className="grid gap-6"
           >
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {employeeLoanSpec.fields.map((f) => (
-                <DynamicField key={f.fieldname} control={form.control} spec={f} />
-              ))}
+              {employeeLoanSpec.fields.map((f) =>
+                f.fieldname === "employee" ? (
+                  <EmployeeSearchField key={f.fieldname} control={form.control} label={f.label} idPrefix={f.fieldname} />
+                ) : (
+                  <DynamicField key={f.fieldname} control={form.control} spec={f} />
+                )
+              )}
             </div>
             <Button type="submit" className="w-fit" disabled={saveMutation.isPending}>
               {saveMutation.isPending ? "Saving…" : "Save"}

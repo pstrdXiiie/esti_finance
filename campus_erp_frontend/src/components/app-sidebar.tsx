@@ -80,6 +80,7 @@ const MODULE_SECTIONS: NavSection[] = [
     href: "/personnel",
     icon: Users,
     children: [
+      { label: "Employees", href: "/personnel/employees" },
       { label: "Benefits", href: "/personnel/benefits" },
       { label: "Overtime", href: "/personnel/overtime" },
       { label: "Loans", href: "/personnel/loans" },

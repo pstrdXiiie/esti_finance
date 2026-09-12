@@ -2,11 +2,10 @@
 
 import Link from "next/link"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { loansComponent } from "@/components/ui/personnel/loans/loans"
+import { loansComponent } from "@/components/ui/personnel/EmployeeAccount"
 import StatutoryReportsPage from "@/app/(app)/personnel/statutory-reports/page"
-import { EmployeesList } from "@/components/ui/personnel/employees/EmployeesList"
+import { EmployeesMiniList } from "@/components/ui/personnel/employees/EmployeesMiniList"
 import { personnel_maintenance } from "@/components/ui/personnel/maintenance/maintenance"
-import { PersonnelApprovals } from "@/components/ui/personnel/approvals/approvals"
 import {
   Card,
   CardDescription,
@@ -69,11 +68,10 @@ export default function PersonnelPage() {
   return (
     <div className="grid gap-4">
       <Tabs defaultValue="employees" className="h-full">
-        <TabsList className="grid w-full grid-cols-5 h-full gap-2 border-0 bg-sidebar p-1 h-full! rounded-3xl items-center print:hidden">
+        <TabsList className="grid w-full grid-cols-4 h-full gap-2 border-0 bg-sidebar p-1 h-full! rounded-3xl items-center print:hidden">
           <TabsTrigger value="employees" className={TAB_TRIGGER_CLASS}>Employees</TabsTrigger>
           <TabsTrigger value="loans" className={TAB_TRIGGER_CLASS}>Employees Account</TabsTrigger>
           <TabsTrigger value="statutory-reports" className={TAB_TRIGGER_CLASS}>Statutory Reports</TabsTrigger>
-          <TabsTrigger value="approvals" className={TAB_TRIGGER_CLASS}>Approvals</TabsTrigger>
           <TabsTrigger value="maintenance" className={TAB_TRIGGER_CLASS}>Maintenance</TabsTrigger>
         </TabsList>
 
@@ -110,8 +108,8 @@ export default function PersonnelPage() {
               </TabsTrigger>
             </TabsList>
             <TabsContent value="employees-list" className="mt-0 min-w-0 flex-1">
-              <div className="tabContent h-full! min-w-0 max-w-full overflow-y-auto rounded-md border-border">
-                <EmployeesList basePath="/personnel/employees" />
+              <div className="tabContent h-full! min-w-0 max-w-full overflow-y-auto rounded-2xl">
+                <EmployeesMiniList basePath="/personnel/employees" />
               </div>
             </TabsContent>
             <TabsContent value="employees-schedule" className="mt-0 min-w-0 flex-1">
@@ -142,9 +140,6 @@ export default function PersonnelPage() {
         </TabsContent>
         <TabsContent value="statutory-reports" className="min-w-0">
           <StatutoryReportsPage />
-        </TabsContent>
-        <TabsContent value="approvals" className="min-w-0">
-          <PersonnelApprovals />
         </TabsContent>
         <TabsContent value="maintenance" className="min-w-0">
           {personnel_maintenance()}

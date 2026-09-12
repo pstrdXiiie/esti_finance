@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, type ReactNode, type ChangeEvent } from "react"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useEffect, useState, type ReactNode, type ChangeEvent } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { frappe, getErrorMessage } from "@/lib/frappe"
 import { employeeSpec } from "@/lib/forms/personnel"
+import { computePayrollFields } from "@/lib/payroll"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -41,14 +42,49 @@ const STEPS = [
 // wizard on purpose — those records only make sense once the employee
 // already exists, so they're edited in EmployeeDetailTabs.tsx's own tabs
 // (Loan/Leave, Benefits) instead of at creation time here.
+interface EducationRow {
+  level: string
+  school_name: string
+  year_graduated: string
+}
 
+const EMPTY_EDUCATION_ROW: EducationRow = { level: "", school_name: "", year_graduated: "" }
+
+// Backend-confirmed via `frappe.get_meta("SMS Personnel Seminar")`:
+// seminar_title (Data, reqd), sponsoring_agency (Data), date_from (Date),
+// date_to (Date), venue (Data), hours (Float). No Select fields here, so
+// no options list to guess at.
+interface SeminarRow {
+  seminar_title: string
+  sponsoring_agency: string
+  date_from: string
+  date_to: string
+  venue: string
+  hours: string
+}
+
+const EMPTY_SEMINAR_ROW: SeminarRow = {
+  seminar_title: "",
+  sponsoring_agency: "",
+  date_from: "",
+  date_to: "",
+  venue: "",
+  hours: "",
+}
+// TODO: confirm against SMS Personnel Education's actual `level` Select
+// options on the backend — this is a placeholder list, not fetched live.
+const EDUCATION_LEVEL_OPTIONS = ["Elementary", "High School", "Vocational", "College", "Graduate Studies"]
 const EMPLOYEE_STATUS_OPTIONS = ["Contractual", "Part Timer", "Probationary", "Regular"]
 const WORK_STATUS_OPTIONS = ["In Active", "Active", "Executive", "Consultant"]
 const GENDER_OPTIONS = ["Male", "Female", "Others"]
 const MARITAL_STATUS_OPTIONS = ["Single", "Married", "Divorced", "Widowed", "Separated"]
 const NATIONALITY_OPTIONS = ["Filipino", "American"]
 
-const READONLY_PAYROLL_FIELDS = [
+// Fields on Personnel Info that src/lib/payroll.ts's computePayrollFields
+// derives from Gross Pay. Kept as one list so the auto-compute effect below
+// and the save payload's numeric coercion can't drift out of sync with each
+// other — add a field here once and both pick it up.
+const COMPUTED_PAYROLL_FIELDS = [
   "with_holding_tax", "sss_deduction", "philhealth_deduction", "pagibig_deduction",
   "reg_rate_pre_hour", "reg_ot_per_hour", "sunday_rate_per_hour", "sunday_ot_per_hour",
   "holiday_rate_per_hour", "holiday_ot_per_hour", "late_rate_per_hour", "undertime_rate_per_hour",
@@ -111,19 +147,88 @@ export function EmployeeWizard({ mode, onDone }: EmployeeWizardProps) {
   const queryClient = useQueryClient()
   const [currentStep, setCurrentStep] = useState(0)
   const [form, setForm] = useState<EmployeeFormState>(INITIAL_STATE)
+  const [educationRows, setEducationRows] = useState<EducationRow[]>([])
+  const [seminarRows, setSeminarRows] = useState<SeminarRow[]>([])
   const [profileFile, setProfileFile] = useState<File | null>(null)
   const [profilePreviewUrl, setProfilePreviewUrl] = useState<string>("")
   const [policyDialogOpen, setPolicyDialogOpen] = useState(false)
   const readOnly = mode === "view"
 
-  const departmentField = employeeSpec.fields.find((f) => f.fieldname === "department")
-  const departmentOptions = (departmentField?.options ?? "")
-    .split("\n")
-    .map((o) => o.trim())
-    .filter(Boolean)
+  // department is now a Link field (options: "SMS Personnel Departments").
+  // Fetch the live list instead of parsing a baked-in choice string — same
+  // query shape as DepartmentMaintenance.tsx.
+  const { data: departments } = useQuery({
+    queryKey: ["SMS Personnel Departments", "list", "employee-wizard"],
+    queryFn: () =>
+      frappe.list<{ name: string; department: string | null }>("SMS Personnel Departments", {
+        fields: ["name", "department"],
+        order_by: "department asc",
+        limit_page_length: 500,
+      }),
+  })
 
   function set(field: string, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }))
+  }
+
+  // Auto-calculate: every time Gross Pay changes, recompute the twelve
+  // derived rate/deduction fields via the shared payroll module (same
+  // calculation EmployeeDetailTabs.tsx's "Compute from Gross Pay" button
+  // runs) and write them straight into form state — this is what was
+  // missing before, which is why the Payroll step never filled itself in.
+  // Clearing Gross Pay clears the derived fields back out rather than
+  // leaving stale numbers behind.
+  useEffect(() => {
+    if (readOnly) return
+    const grossPay = Number(form.gross_pay)
+    if (!form.gross_pay || !(grossPay > 0)) {
+      setForm((prev) => {
+        const cleared = { ...prev }
+        for (const field of COMPUTED_PAYROLL_FIELDS) cleared[field] = ""
+        return cleared
+      })
+      return
+    }
+    const result = computePayrollFields(form.gross_pay)
+    setForm((prev) => ({
+      ...prev,
+      sss_deduction: String(result.sss_deduction),
+      philhealth_deduction: String(result.philhealth_deduction),
+      pagibig_deduction: String(result.pagibig_deduction),
+      with_holding_tax: String(result.with_holding_tax),
+      reg_rate_pre_hour: String(result.reg_rate_pre_hour),
+      reg_ot_per_hour: String(result.reg_ot_per_hour),
+      sunday_rate_per_hour: String(result.sunday_rate_per_hour),
+      sunday_ot_per_hour: String(result.sunday_ot_per_hour),
+      holiday_rate_per_hour: String(result.holiday_rate_per_hour),
+      holiday_ot_per_hour: String(result.holiday_ot_per_hour),
+      late_rate_per_hour: String(result.late_rate_per_hour),
+      undertime_rate_per_hour: String(result.undertime_rate_per_hour),
+    }))
+    // Only Gross Pay should re-trigger this — the fields it writes into
+    // are intentionally excluded from the dependency list, or every write
+    // above would immediately re-fire the effect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.gross_pay, readOnly])
+
+  function addEducationRow() {
+    setEducationRows((prev) => [...prev, { ...EMPTY_EDUCATION_ROW }])
+  }
+  function updateEducationRow(index: number, field: keyof EducationRow, value: string) {
+    setEducationRows((prev) => prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)))
+  }
+  function removeEducationRow(index: number) {
+    setEducationRows((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  function addSeminarRow() {
+    setSeminarRows((prev) => [...prev, { ...EMPTY_SEMINAR_ROW }])
+  }
+  function updateSeminarRow(index: number, field: keyof SeminarRow, value: string) {
+    setSeminarRows((prev) => prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)))
+  }
+  function removeSeminarRow(index: number) {
+    setSeminarRows((prev) => prev.filter((_, i) => i !== index))
   }
 
   // Deferred-upload pattern, matching registrar/students/new/page.tsx: the
@@ -147,7 +252,23 @@ export function EmployeeWizard({ mode, onDone }: EmployeeWizardProps) {
       payload.vacation_leave = form.vacation_leave ? Number(form.vacation_leave) : undefined
       payload.sick_leave = form.sick_leave ? Number(form.sick_leave) : undefined
       for (const [field] of CHECK_FIELDS) payload[field] = form[field] === "1" ? 1 : 0
-      for (const field of READONLY_PAYROLL_FIELDS) delete payload[field] // server-computed, never sent on create
+      // Gross Pay/Allowance and the twelve computed fields are now genuinely
+      // calculated client-side by the effect above (via computePayrollFields),
+      // so — unlike before — they're real numbers that should be sent, not
+      // stripped out. Coerce each to a number (or drop it if blank, e.g. no
+      // Gross Pay was entered) rather than sending it as a string.
+      payload.gross_pay = form.gross_pay ? Number(form.gross_pay) : undefined
+      payload.allowance = form.allowance ? Number(form.allowance) : undefined
+      for (const field of COMPUTED_PAYROLL_FIELDS) {
+        payload[field] = form[field] ? Number(form[field]) : undefined
+      }
+      payload.education = educationRows.filter((r) => r.school_name.trim())
+      // seminar_title is `reqd: 1` on the backend, so filter on that (not
+      // venue/agency, which are optional). hours is Float on the backend —
+      // coerce here the same way number_of_dependents is coerced above.
+      payload.seminars_attended = seminarRows
+        .filter((r) => r.seminar_title.trim())
+        .map((r) => ({ ...r, hours: r.hours ? Number(r.hours) : undefined }))
       if (profileFile) {
         const uploaded = await frappe.uploadFile(profileFile, { isPrivate: true })
         payload.profile = uploaded.file_url
@@ -180,17 +301,15 @@ export function EmployeeWizard({ mode, onDone }: EmployeeWizardProps) {
               <div className="flex flex-col items-center gap-2">
                 {idx <= currentStep ? (
                   <div
-                    className={`h-5 w-5 shrink-0 rounded-full bg-primary ${
-                      idx === currentStep ? "ring-4 ring-primary/20" : ""
-                    }`}
+                    className={`h-5 w-5 shrink-0 rounded-full bg-primary ${idx === currentStep ? "ring-4 ring-primary/20" : ""
+                      }`}
                   />
                 ) : (
                   <div className="h-3.5 w-3.5 shrink-0 rounded-full border-2 border-muted-foreground/40" />
                 )}
                 <span
-                  className={`w-24 text-center text-[11px] font-medium ${
-                    idx <= currentStep ? "text-foreground" : "text-muted-foreground"
-                  }`}
+                  className={`w-24 text-center text-[11px] font-medium ${idx <= currentStep ? "text-foreground" : "text-muted-foreground"
+                    }`}
                 >
                   {label}
                 </span>
@@ -313,7 +432,11 @@ export function EmployeeWizard({ mode, onDone }: EmployeeWizardProps) {
                 <Field id="emp-department" label="Department">
                   <Select value={form.department} onValueChange={(v) => set("department", v ?? "")} disabled={readOnly}>
                     <SelectTrigger id="emp-department" className="w-full"><SelectValue placeholder="Select…" /></SelectTrigger>
-                    <SelectContent>{departmentOptions.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+                    <SelectContent>
+                      {(departments ?? []).map((d) => (
+                        <SelectItem key={d.name} value={d.name}>{d.department ?? d.name}</SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                 </Field>
               </div>
@@ -333,25 +456,158 @@ export function EmployeeWizard({ mode, onDone }: EmployeeWizardProps) {
           </div>
         )}
 
-        {/* Step 2: Education — child-table-only in the prototype, placeholder here */}
+        {/* Step 2: Education — child table (SMS Personnel Education) */}
         {currentStep === 2 && (
-          <p className="text-muted-foreground">
-            Education history is a child table (SMS Personnel Education) — no
-            table editor is wired into this wizard yet. See
-            05-PERSONNEL-IMPLEMENTATION-PLAN.md Phase 2.
-          </p>
+          <div className="grid gap-3">
+            <SectionLabel>Education</SectionLabel>
+            {educationRows.length === 0 && (
+              <p className="text-sm text-muted-foreground">No education records added yet.</p>
+            )}
+            {educationRows.map((row, index) => (
+              <div key={index} className="grid gap-3 sm:grid-cols-[1fr_1fr_120px_40px] items-end">
+                <Field id={`edu-level-${index}`} label={index === 0 ? "Level" : ""}>
+                  <Select
+                    value={row.level}
+                    onValueChange={(v) => updateEducationRow(index, "level", v ?? "")}
+                    disabled={readOnly}
+                  >
+                    <SelectTrigger id={`edu-level-${index}`} className="w-full">
+                      <SelectValue placeholder="Select…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {EDUCATION_LEVEL_OPTIONS.map((o) => (
+                        <SelectItem key={o} value={o}>{o}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field id={`edu-school-${index}`} label={index === 0 ? "School Name" : ""}>
+                  <Input
+                    id={`edu-school-${index}`}
+                    disabled={readOnly}
+                    value={row.school_name}
+                    onChange={(e) => updateEducationRow(index, "school_name", e.target.value)}
+                  />
+                </Field>
+                <Field id={`edu-year-${index}`} label={index === 0 ? "Year Graduated" : ""}>
+                  <Input
+                    id={`edu-year-${index}`}
+                    type="number"
+                    disabled={readOnly}
+                    value={row.year_graduated}
+                    onChange={(e) => updateEducationRow(index, "year_graduated", e.target.value)}
+                  />
+                </Field>
+                {!readOnly && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => removeEducationRow(index)}
+                    aria-label="Remove row"
+                  >
+                    ✕
+                  </Button>
+                )}
+              </div>
+            ))}
+            {!readOnly && (
+              <Button type="button" variant="outline" size="sm" className="w-fit" onClick={addEducationRow}>
+                + Add Education
+              </Button>
+            )}
+          </div>
         )}
 
         {/* Step 3: Skills / Seminars Attended */}
         {currentStep === 3 && (
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field id="emp-skills" label="Skills">
-              <Input id="emp-skills" disabled={readOnly} value={form.skills} onChange={(e) => set("skills", e.target.value)} />
-            </Field>
-            <p className="sm:col-span-2 text-muted-foreground">
-              Seminars Attended is a child table (SMS Personnel Seminar) — not
-              wired into this wizard yet.
-            </p>
+          <div className="grid gap-4">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field id="emp-skills" label="Skills">
+                <Input id="emp-skills" disabled={readOnly} value={form.skills} onChange={(e) => set("skills", e.target.value)} />
+              </Field>
+            </div>
+
+            <div className="grid gap-3">
+              <SectionLabel>Seminars / Trainings Attended</SectionLabel>
+              {seminarRows.length === 0 && (
+                <p className="text-sm text-muted-foreground">No seminars added yet.</p>
+              )}
+              {seminarRows.map((row, index) => (
+                <div
+                  key={index}
+                  className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.4fr_1.2fr_1fr_1fr_1fr_90px_40px] items-end rounded-lg border border-border p-3"
+                >
+                  <Field id={`sem-title-${index}`} label="Seminar/Training Title">
+                    <Input
+                      id={`sem-title-${index}`}
+                      disabled={readOnly}
+                      value={row.seminar_title}
+                      onChange={(e) => updateSeminarRow(index, "seminar_title", e.target.value)}
+                    />
+                  </Field>
+                  <Field id={`sem-agency-${index}`} label="Sponsoring Agency">
+                    <Input
+                      id={`sem-agency-${index}`}
+                      disabled={readOnly}
+                      value={row.sponsoring_agency}
+                      onChange={(e) => updateSeminarRow(index, "sponsoring_agency", e.target.value)}
+                    />
+                  </Field>
+                  <Field id={`sem-date-from-${index}`} label="Date From">
+                    <Input
+                      id={`sem-date-from-${index}`}
+                      type="date"
+                      disabled={readOnly}
+                      value={row.date_from}
+                      onChange={(e) => updateSeminarRow(index, "date_from", e.target.value)}
+                    />
+                  </Field>
+                  <Field id={`sem-date-to-${index}`} label="Date To">
+                    <Input
+                      id={`sem-date-to-${index}`}
+                      type="date"
+                      disabled={readOnly}
+                      value={row.date_to}
+                      onChange={(e) => updateSeminarRow(index, "date_to", e.target.value)}
+                    />
+                  </Field>
+                  <Field id={`sem-venue-${index}`} label="Venue">
+                    <Input
+                      id={`sem-venue-${index}`}
+                      disabled={readOnly}
+                      value={row.venue}
+                      onChange={(e) => updateSeminarRow(index, "venue", e.target.value)}
+                    />
+                  </Field>
+                  <Field id={`sem-hours-${index}`} label="Hours">
+                    <Input
+                      id={`sem-hours-${index}`}
+                      type="number"
+                      disabled={readOnly}
+                      value={row.hours}
+                      onChange={(e) => updateSeminarRow(index, "hours", e.target.value)}
+                    />
+                  </Field>
+                  {!readOnly && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removeSeminarRow(index)}
+                      aria-label="Remove row"
+                    >
+                      ✕
+                    </Button>
+                  )}
+                </div>
+              ))}
+              {!readOnly && (
+                <Button type="button" variant="outline" size="sm" className="w-fit" onClick={addSeminarRow}>
+                  + Add Seminar
+                </Button>
+              )}
+            </div>
           </div>
         )}
 
@@ -384,7 +640,9 @@ export function EmployeeWizard({ mode, onDone }: EmployeeWizardProps) {
               </Select>
             </Field>
 
-            <SectionLabel>Server-computed (read-only, set after payroll processing)</SectionLabel>
+            <SectionLabel>
+              Auto-calculated from Gross Pay (read-only — enter Gross Pay above to fill these in)
+            </SectionLabel>
             <Field id="emp-with-holding-tax" label="Withholding Tax">
               <Input id="emp-with-holding-tax" type="number" disabled value={form.with_holding_tax} />
             </Field>
