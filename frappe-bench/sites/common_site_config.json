@@ -1,10 +1,10 @@
 {
  "background_workers": 1,
- "default_site": "estierp.local",
+ "default_site": "education.localhost",
  "developer_mode": 1,
  "file_watcher_port": 6787,
- "frappe_user": "frappe",
- "gunicorn_workers": 25,
+ "frappe_user": "esti",
+ "gunicorn_workers": 9,
  "live_reload": true,
  "rebase_on_pull": false,
  "redis_cache": "redis://127.0.0.1:13000",

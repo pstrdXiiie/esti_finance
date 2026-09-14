@@ -38,7 +38,7 @@
    "fieldname": "employee",
    "fieldtype": "Link",
    "label": "Employee",
-   "options": "Employee",
+   "options": "Personnel Info",
    "reqd": 1,
    "read_only": 0,
    "in_list_view": 1

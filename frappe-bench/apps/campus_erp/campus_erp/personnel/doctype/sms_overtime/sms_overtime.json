@@ -32,7 +32,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Employee",
-   "options": "Employee",
+   "options": "Personnel Info",
    "reqd": 1
   },
   {
