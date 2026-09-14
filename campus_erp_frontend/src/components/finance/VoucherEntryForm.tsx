@@ -119,13 +119,13 @@ export function VoucherEntryForm({
   return (
     <div className="grid max-w-3xl gap-6">
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">{title}</h1>
-        <p className="mt-1 text-sm text-zinc-500">{description}</p>
+        <h1 className="text-2xl font-semibold text-foreground">{title}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{description}</p>
       </div>
 
       <FinancePropertySection title="Details">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <label className="flex items-center gap-2 text-xs font-medium text-zinc-500 sm:col-span-2">
+          <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground sm:col-span-2">
             <input
               type="checkbox"
               checked={manualMode}
@@ -135,10 +135,10 @@ export function VoucherEntryForm({
           </label>
 
           {manualMode ? (
-            <label className="grid gap-1 text-xs font-medium text-zinc-500">
+            <label className="grid gap-1 text-xs font-medium text-muted-foreground">
               {docLabel}
               <input
-                className={`rounded border border-zinc-200 ${financeRowInput}`}
+                className={`rounded border border-border ${financeRowInput}`}
                 type="text"
                 value={manualNumber}
                 onChange={(e) => setManualNumber(e.target.value)}
@@ -146,10 +146,10 @@ export function VoucherEntryForm({
               />
             </label>
           ) : (
-            <label className="grid gap-1 text-xs font-medium text-zinc-500">
+            <label className="grid gap-1 text-xs font-medium text-muted-foreground">
               {docLabel}
               <select
-                className={`rounded border border-zinc-200 ${financeRowSelect}`}
+                className={`rounded border border-border ${financeRowSelect}`}
                 value={namingSeries}
                 onChange={(e) => setNamingSeries(e.target.value)}
               >
@@ -162,20 +162,20 @@ export function VoucherEntryForm({
             </label>
           )}
 
-          <label className="grid gap-1 text-xs font-medium text-zinc-500">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
             Date
             <input
-              className={`rounded border border-zinc-200 bg-zinc-50 text-zinc-500 ${financeRowInput}`}
+              className={`rounded border border-border bg-muted text-muted-foreground ${financeRowInput}`}
               type="text"
               value={postingDate}
               readOnly
             />
           </label>
 
-          <label className="grid gap-1 text-xs font-medium text-zinc-500 sm:col-span-2">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground sm:col-span-2">
             Notes
             <textarea
-              className={`min-h-[72px] rounded border border-zinc-200 ${financeRowInput}`}
+              className={`min-h-[72px] rounded border border-border ${financeRowInput}`}
               value={remark}
               onChange={(e) => setRemark(e.target.value)}
               placeholder="Reason for this entry…"
@@ -188,13 +188,13 @@ export function VoucherEntryForm({
 
       <FinancePropertySection title="Totals">
         <div className="grid grid-cols-2 gap-3 text-sm">
-          <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-            <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Total Debit</p>
-            <p className="mt-1 font-mono text-base text-zinc-900">₱{totals.debit.toFixed(2)}</p>
+          <div className="rounded-lg border border-border bg-muted p-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Total Debit</p>
+            <p className="mt-1 font-mono text-base text-foreground">₱{totals.debit.toFixed(2)}</p>
           </div>
-          <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-            <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Total Credit</p>
-            <p className="mt-1 font-mono text-base text-zinc-900">₱{totals.credit.toFixed(2)}</p>
+          <div className="rounded-lg border border-border bg-muted p-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Total Credit</p>
+            <p className="mt-1 font-mono text-base text-foreground">₱{totals.credit.toFixed(2)}</p>
           </div>
         </div>
       </FinancePropertySection>

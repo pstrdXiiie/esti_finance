@@ -42,8 +42,8 @@ interface PurchaseOrderItemSource {
 }
 
 const poMatchColumns: FinanceRecordColumn<PurchaseOrderSummary>[] = [
-  { key: "name", label: "PO #", render: (r) => <span className="font-medium text-zinc-900">{r.name}</span> },
-  { key: "supplier_name", label: "Supplier", render: (r) => <span className="text-zinc-500">{r.supplier_name}</span> },
+  { key: "name", label: "PO #", render: (r) => <span className="font-medium text-foreground">{r.name}</span> },
+  { key: "supplier_name", label: "Supplier", render: (r) => <span className="text-muted-foreground">{r.supplier_name}</span> },
   { key: "po_total", label: "Total", align: "right", render: (r) => `₱${Number(r.po_total).toFixed(2)}` },
 ]
 
@@ -172,8 +172,8 @@ export default function PurchaseOrderReceivingPage() {
   return (
     <div className="grid max-w-3xl gap-6">
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">Purchase Order Receiving</h1>
-        <p className="mt-1 text-sm text-zinc-500">
+        <h1 className="text-2xl font-semibold text-foreground">Purchase Order Receiving</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Update items on-hand quantity based on items received from the Purchase Order. Once posted to GL, a PO
           receipt can never be cancelled.
         </p>
@@ -181,20 +181,20 @@ export default function PurchaseOrderReceivingPage() {
 
       <FinancePropertySection title="PO Lookup">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <label className="grid gap-1 text-xs font-medium text-zinc-500">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
             PO #
             <input
-              className={`rounded border border-zinc-200 ${financeRowInput}`}
+              className={`rounded border border-border ${financeRowInput}`}
               type="text"
               value={poSearch}
               onChange={(e) => setPoSearch(e.target.value)}
               placeholder="Search PO number…"
             />
           </label>
-          <label className="grid gap-1 text-xs font-medium text-zinc-500">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
             PO Date
             <input
-              className={`rounded border border-zinc-200 bg-zinc-50 text-zinc-500 ${financeRowInput}`}
+              className={`rounded border border-border bg-muted text-muted-foreground ${financeRowInput}`}
               type="text"
               value={selected?.po_date ?? "—"}
               readOnly
@@ -203,7 +203,7 @@ export default function PurchaseOrderReceivingPage() {
         </div>
 
         {poSearch && matches.length > 0 && !selected && (
-          <div className="mt-2 rounded border border-zinc-200">
+          <div className="mt-2 rounded border border-border">
             <FinanceRecordTable
               columns={poMatchColumns}
               rows={matches}
@@ -216,19 +216,19 @@ export default function PurchaseOrderReceivingPage() {
 
       <FinancePropertySection title="Supplier & Totals">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <label className="grid gap-1 text-xs font-medium text-zinc-500">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
             Supplier Code
             <input
-              className={`rounded border border-zinc-200 bg-zinc-50 text-zinc-500 ${financeRowInput}`}
+              className={`rounded border border-border bg-muted text-muted-foreground ${financeRowInput}`}
               type="text"
               value={selected?.supplier_code ?? "—"}
               readOnly
             />
           </label>
-          <label className="grid gap-1 text-xs font-medium text-zinc-500 sm:col-span-2">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground sm:col-span-2">
             Supplier
             <input
-              className={`rounded border border-zinc-200 bg-zinc-50 text-zinc-500 ${financeRowInput}`}
+              className={`rounded border border-border bg-muted text-muted-foreground ${financeRowInput}`}
               type="text"
               value={selected?.supplier_name ?? "—"}
               readOnly
@@ -236,37 +236,37 @@ export default function PurchaseOrderReceivingPage() {
           </label>
         </div>
         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-4">
-          <label className="grid gap-1 text-xs font-medium text-zinc-500">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
             PO Totals
             <input
-              className={`rounded border border-zinc-200 bg-zinc-50 text-right text-zinc-500 ${financeRowInput}`}
+              className={`rounded border border-border bg-muted text-right text-muted-foreground ${financeRowInput}`}
               type="text"
               value={selected ? `₱${Number(selected.po_total).toFixed(2)}` : "—"}
               readOnly
             />
           </label>
-          <label className="grid gap-1 text-xs font-medium text-zinc-500">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
             Terms
             <input
-              className={`rounded border border-zinc-200 bg-zinc-50 text-zinc-500 ${financeRowInput}`}
+              className={`rounded border border-border bg-muted text-muted-foreground ${financeRowInput}`}
               type="text"
               value={selected?.po_terms ?? "—"}
               readOnly
             />
           </label>
-          <label className="grid gap-1 text-xs font-medium text-zinc-500">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
             Tax
             <input
-              className={`rounded border border-zinc-200 bg-zinc-50 text-right text-zinc-500 ${financeRowInput}`}
+              className={`rounded border border-border bg-muted text-right text-muted-foreground ${financeRowInput}`}
               type="text"
               value={selected ? Number(selected.po_tax).toFixed(2) : "—"}
               readOnly
             />
           </label>
-          <label className="grid gap-1 text-xs font-medium text-zinc-500">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
             Delivery Date
             <input
-              className={`rounded border border-zinc-200 ${financeRowInput}`}
+              className={`rounded border border-border ${financeRowInput}`}
               type="date"
               value={deliveryDate}
               onChange={(e) => setDeliveryDate(e.target.value)}
@@ -275,10 +275,10 @@ export default function PurchaseOrderReceivingPage() {
           </label>
         </div>
         <div className="mt-3">
-          <label className="grid gap-1 text-xs font-medium text-zinc-500 sm:w-1/3">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground sm:w-1/3">
             S.I. Number
             <input
-              className={`rounded border border-zinc-200 ${financeRowInput}`}
+              className={`rounded border border-border ${financeRowInput}`}
               type="text"
               value={siNumber}
               onChange={(e) => setSiNumber(e.target.value)}
@@ -310,7 +310,7 @@ export default function PurchaseOrderReceivingPage() {
         </button>
         <button
           type="button"
-          className="rounded border border-zinc-200 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 disabled:opacity-40"
+          className="rounded border border-border px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 disabled:opacity-40"
           onClick={handleCancel}
           disabled={!canAct}
         >
@@ -318,7 +318,7 @@ export default function PurchaseOrderReceivingPage() {
         </button>
         <button
           type="button"
-          className="rounded border border-zinc-200 px-3 py-1.5 text-sm text-zinc-600 hover:bg-zinc-50"
+          className="rounded border border-border px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted"
           onClick={handlePrint}
           disabled={!selected}
         >
@@ -326,7 +326,7 @@ export default function PurchaseOrderReceivingPage() {
         </button>
         <button
           type="button"
-          className="ml-auto rounded border border-zinc-200 px-3 py-1.5 text-sm text-zinc-600 hover:bg-zinc-50"
+          className="ml-auto rounded border border-border px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted"
           onClick={() => history.back()}
         >
           Exit
@@ -347,13 +347,13 @@ export default function PurchaseOrderReceivingPage() {
               type="file"
               onChange={(e) => setDeliveryReceiptFile(e.target.files?.[0] ?? null)}
               disabled={!canAct}
-              className="flex-1 text-xs text-zinc-500"
+              className="flex-1 text-xs text-muted-foreground"
             />
             <button
               type="button"
               onClick={() => handleUpload("delivery")}
               disabled={!canAct || !deliveryReceiptFile}
-              className="flex items-center gap-1 rounded border border-zinc-200 px-3 py-1.5 text-xs text-zinc-600 hover:bg-zinc-50 disabled:opacity-40"
+              className="flex items-center gap-1 rounded border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted disabled:opacity-40"
             >
               <Upload className="h-3.5 w-3.5" />
               Upload
@@ -366,13 +366,13 @@ export default function PurchaseOrderReceivingPage() {
               type="file"
               onChange={(e) => setOfficialReceiptFile(e.target.files?.[0] ?? null)}
               disabled={!canAct}
-              className="flex-1 text-xs text-zinc-500"
+              className="flex-1 text-xs text-muted-foreground"
             />
             <button
               type="button"
               onClick={() => handleUpload("official")}
               disabled={!canAct || !officialReceiptFile}
-              className="flex items-center gap-1 rounded border border-zinc-200 px-3 py-1.5 text-xs text-zinc-600 hover:bg-zinc-50 disabled:opacity-40"
+              className="flex items-center gap-1 rounded border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted disabled:opacity-40"
             >
               <Upload className="h-3.5 w-3.5" />
               Upload

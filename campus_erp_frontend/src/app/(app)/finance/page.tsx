@@ -48,7 +48,7 @@ function FinancePageContent() {
   const initialStudentName = searchParams.get("student") ?? undefined
 
   return (
-    <div>
+    <div className="grid gap-4">
       <Tabs defaultValue={initialTab} className="h-full">
         <TabsList className="grid w-full grid-cols-4 h-full gap-2 border-0 bg-sidebar p-1 h-full! rounded-3xl items-center print:hidden">
           <TabsTrigger value="enrollment" className="text-foreground hover:text-foreground data-active:bg-primary data-active:text-primary-foreground pt-2 pb-2 rounded-2xl">
@@ -78,12 +78,10 @@ function FinancePageContent() {
         </TabsContent>
       </Tabs>
 
-
-    
-      <div className="print:hidden">
-        <h1 className="text-2xl font-semibold">Registrar</h1>
+      {/* <div className="print:hidden">
+        <h1 className="text-2xl font-semibold">Finance</h1>
         <p className="text-muted-foreground">
-          Student records, curriculum, enrollment, and exam permits.
+          Student assessments, discounts, wallets, and other finance shortcuts.
         </p>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 print:hidden">
@@ -97,9 +95,7 @@ function FinancePageContent() {
             </Card>
           </Link>
         ))}
-      </div>
-      
-
+      </div> */}
     </div>
   )
 }

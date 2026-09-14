@@ -51,6 +51,7 @@ export function FinanceEntryScreen({
   basePath,
   extraActions,
   onSaved,
+  onCancel,
 }: {
   spec: EntrySpec
   name?: string
@@ -58,6 +59,13 @@ export function FinanceEntryScreen({
   extraActions?: ReactNode
   /** Called after a successful save, in addition to any basePath navigation. */
   onSaved?: (name: string) => void
+  /**
+   * Called when Cancel is pressed. Takes priority over basePath-based
+   * navigation — used by callers that embed this screen inline (e.g.
+   * FinanceEntryListScreen's formDisplay="inline") and just need to close
+   * the panel rather than navigate to a route.
+   */
+  onCancel?: () => void
 }) {
   const queryClient = useQueryClient()
   const router = useRouter()
@@ -103,7 +111,7 @@ export function FinanceEntryScreen({
   })
 
   if (name && isLoading) {
-    return <div className="h-96 w-full animate-pulse rounded-md bg-zinc-100" />
+    return <div className="h-96 w-full animate-pulse rounded-md bg-muted" />
   }
 
   const sectionOrder: string[] = []
@@ -121,14 +129,14 @@ export function FinanceEntryScreen({
     <form onSubmit={form.handleSubmit((values) => saveMutation.mutate(values))}>
       <FinancePropertyPanel
         title={name ? `${spec.title} — ${name}` : `New ${spec.title}`}
-        onCancel={basePath ? () => router.push(basePath) : undefined}
+        onCancel={onCancel ?? (basePath ? () => router.push(basePath) : undefined)}
         onSave={form.handleSubmit((values) => saveMutation.mutate(values))}
         saveLabel="Save"
         isSaving={saveMutation.isPending}
       >
         {sectionOrder.map((sectionKey) => (
           <FinancePropertySection key={sectionKey || "default"} title={sectionKey || "Details"}>
-            <div className="grid divide-y divide-zinc-100">
+            <div className="grid divide-y divide-border">
               {sectionMap.get(sectionKey)!.map((f) => {
                 if (f.dependsOn && !fieldIsVisible(f.dependsOn, form.watch)) {
                   return null

@@ -27,12 +27,20 @@ export function EntryScreen({
   spec,
   name,
   basePath,
+  onSaved,
+  onCancel,
 }: {
   spec: EntrySpec
-  /** Existing document name to load, or undefined for a new entry. */
   name?: string
-  /** List-page route this entry lives under; on create, navigates to `${basePath}/${newName}`. */
   basePath?: string
+  /** Called after a successful save, in addition to any basePath navigation. */
+  onSaved?: () => void
+  /**
+   * Called when Cancel is pressed, rendering a Cancel button next to Save.
+   * Used by callers that embed this screen inline (e.g. EntryListScreen's
+   * inlineAdd) and just need to close the panel rather than navigate.
+   */
+  onCancel?: () => void
 }) {
   const queryClient = useQueryClient()
   const router = useRouter()
@@ -46,10 +54,17 @@ export function EntryScreen({
   })
 
   const form = useForm<Record<string, unknown>>({
-    defaultValues: doc ?? {},
-    values: doc,
-  })
-
+  defaultValues: spec.fields.reduce(
+    (acc, f) => ({ ...acc, [f.fieldname]: doc?.[f.fieldname] ?? "" }),
+    {}
+  ),
+  values: doc
+    ? spec.fields.reduce(
+        (acc, f) => ({ ...acc, [f.fieldname]: doc[f.fieldname] ?? "" }),
+        {}
+      )
+    : undefined,
+})
   // Bug fix: `rows` used to only ever be seeded from the initial `[]` state,
   // so opening an existing document with a child table (e.g. Curriculum
   // Subjects, Permit Subjects, Assessment Detail) rendered an empty grid and
@@ -75,14 +90,15 @@ export function EntryScreen({
             ? frappe.call(spec.primaryApi, payload)
             : frappe.createDoc(spec.doctype, payload))
     },
-    onSuccess: (saved) => {
-      toast.success(`${spec.title} saved`)
-      queryClient.invalidateQueries({ queryKey: [spec.doctype] })
-      if (!name && basePath) {
-        const newName = (saved as { name?: string })?.name
-        if (newName) router.push(`${basePath}/${encodeURIComponent(newName)}`)
-      }
-    },
+   onSuccess: (saved) => {
+  toast.success(`${spec.title} saved`)
+  queryClient.invalidateQueries({ queryKey: [spec.doctype] })
+  if (!name && basePath) {
+    const newName = (saved as { name?: string })?.name
+    if (newName) router.push(`${basePath}/${encodeURIComponent(newName)}`)
+  }
+  onSaved?.()
+},
     onError: (error) => toast.error(`Could not save ${spec.title}: ${getErrorMessage(error)}`),
   })
 
@@ -136,6 +152,11 @@ export function EntryScreen({
             <Button type="submit" disabled={saveMutation.isPending}>
               {saveMutation.isPending ? "Saving…" : "Save"}
             </Button>
+            {onCancel && (
+              <Button type="button" variant="outline" onClick={onCancel}>
+                Cancel
+              </Button>
+            )}
             {name &&
               spec.workflowActions?.map((action) => (
                 <Button

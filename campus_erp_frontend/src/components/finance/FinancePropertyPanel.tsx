@@ -17,11 +17,11 @@ export function FinancePropertyPanel({
   children: ReactNode
 }) {
   return (
-    <div className="mx-auto max-w-2xl rounded-lg border border-zinc-200 bg-white">
-      <div className="flex items-center justify-between border-b border-zinc-200 px-5 py-4">
+    <div className="mx-auto max-w-2xl rounded-lg border border-border bg-card">
+      <div className="flex items-center justify-between border-b border-border px-5 py-4">
         <div className="flex items-center gap-2">
           <span className={financeAccentDot} />
-          <p className="text-sm font-semibold text-zinc-900">{title}</p>
+          <p className="text-sm font-semibold text-foreground">{title}</p>
         </div>
         {(onCancel || onSave) && (
           <div className="flex gap-1.5">
@@ -51,8 +51,8 @@ export function FinancePropertyRow({
   children: ReactNode
 }) {
   return (
-    <div className="grid grid-cols-[130px_1fr] items-center border-b border-zinc-100 px-5 py-2.5 last:border-b-0">
-      <span className="text-xs text-zinc-500">{label}</span>
+    <div className="grid grid-cols-[130px_1fr] items-center border-b border-border px-5 py-2.5 last:border-b-0">
+      <span className="text-xs text-muted-foreground">{label}</span>
       {children}
     </div>
   )
@@ -68,9 +68,9 @@ export function FinancePropertySection({
   children: ReactNode
 }) {
   return (
-    <div className="border-t border-zinc-200 px-5 py-4">
+    <div className="border-t border-border px-5 py-4">
       <div className="mb-2.5 flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">{title}</span>
+        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{title}</span>
         {right}
       </div>
       {children}

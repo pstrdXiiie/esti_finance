@@ -2,7 +2,8 @@
 
 import Link from "next/link"
 import { useState } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { EntryScreen } from "@/components/sms/EntryScreen"
 
 import { frappe } from "@/lib/frappe"
 import type { EntrySpec } from "@/lib/forms/types"
@@ -27,11 +28,15 @@ import { Search } from "lucide-react";
 export function EntryListScreen({
   spec,
   basePath,
+  inlineAdd = false,
 }: {
   spec: EntrySpec
-  /** Route this list lives under, e.g. "/registrar/curriculum". */
   basePath: string
+  /** When true, "Add" opens an inline panel above the table instead of navigating to a new route. */
+  inlineAdd?: boolean
 }) {
+  const queryClient = useQueryClient()
+  const [showAddPanel, setShowAddPanel] = useState(false)
   const [search, setSearch] = useState("")
   const listColumns = spec.fields.filter((f) => f.inListView)
   const columns = listColumns.length ? listColumns : spec.fields.slice(0, 4)
@@ -62,8 +67,26 @@ export function EntryListScreen({
     <div className="grid gap-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">{spec.title}</h1>
-        <Button render={<Link href={`${basePath}/new`} />} nativeButton={false}>Add {spec.title}</Button>
+        {inlineAdd ? (
+          <Button onClick={() => setShowAddPanel((v) => !v)}>
+            {showAddPanel ? "Cancel" : `Add ${spec.title}`}
+          </Button>
+        ) : (
+          <Button render={<Link href={`${basePath}/new`} />} nativeButton={false}>Add {spec.title}</Button>
+        )}
       </div>
+
+      {inlineAdd && showAddPanel && (
+        <div className="w-full min-w-0 rounded-md border p-4">
+          <EntryScreen
+            spec={spec}
+            onSaved={() => {
+              setShowAddPanel(false)
+              queryClient.invalidateQueries({ queryKey: [spec.doctype] })
+            }}
+          />
+        </div>
+      )}
       <div className="relative max-w-sm">
         <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input

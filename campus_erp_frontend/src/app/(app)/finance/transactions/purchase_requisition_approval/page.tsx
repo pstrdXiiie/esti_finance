@@ -20,10 +20,10 @@ interface PurchaseRequisitionRow {
 }
 
 const requisitionColumns: FinanceRecordColumn<PurchaseRequisitionRow>[] = [
-  { key: "name", label: "Requisition", render: (r) => <span className="font-medium text-zinc-900">{r.name}</span> },
-  { key: "date_needed", label: "Date Needed", render: (r) => <span className="text-zinc-500">{r.date_needed}</span> },
+  { key: "name", label: "Requisition", render: (r) => <span className="font-medium text-foreground">{r.name}</span> },
+  { key: "date_needed", label: "Date Needed", render: (r) => <span className="text-muted-foreground">{r.date_needed}</span> },
   { key: "total_amount", label: "Total", align: "right", render: (r) => `₱${Number(r.total_amount).toFixed(2)}` },
-  { key: "prepared_by", label: "Requested By", render: (r) => <span className="text-zinc-500">{r.prepared_by}</span> },
+  { key: "prepared_by", label: "Requested By", render: (r) => <span className="text-muted-foreground">{r.prepared_by}</span> },
 ]
 
 export default function PurchaseRequisitionApprovalPage() {
@@ -83,35 +83,35 @@ export default function PurchaseRequisitionApprovalPage() {
   return (
     <div className="grid max-w-3xl gap-6">
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">Purchase Request Approval</h1>
-        <p className="mt-1 text-sm text-zinc-500">Review and approve submitted purchase requisitions.</p>
+        <h1 className="text-2xl font-semibold text-foreground">Purchase Request Approval</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Review and approve submitted purchase requisitions.</p>
       </div>
 
       <FinancePropertySection title="Search & Filter">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <label className="flex items-center gap-2 text-xs font-medium text-zinc-500">
+          <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
             <input
               type="checkbox"
               checked={searchAll}
               onChange={(e) => setSearchAll(e.target.checked)}
-              className="h-4 w-4 rounded border-zinc-300"
+              className="h-4 w-4 rounded border-border"
             />
             Search all
           </label>
-          <label className="grid gap-1 text-xs font-medium text-zinc-500">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
             From
             <input
-              className={`rounded border border-zinc-200 ${financeRowInput}`}
+              className={`rounded border border-border ${financeRowInput}`}
               type="date"
               value={dateFrom}
               disabled={searchAll}
               onChange={(e) => setDateFrom(e.target.value)}
             />
           </label>
-          <label className="grid gap-1 text-xs font-medium text-zinc-500">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
             To
             <input
-              className={`rounded border border-zinc-200 ${financeRowInput}`}
+              className={`rounded border border-border ${financeRowInput}`}
               type="date"
               value={dateTo}
               disabled={searchAll}
@@ -135,46 +135,46 @@ export default function PurchaseRequisitionApprovalPage() {
 
       <FinancePropertySection title="Request Details">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <label className="grid gap-1 text-xs font-medium text-zinc-500">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
             Purchase Requisition
             <input
-              className={`rounded border border-zinc-200 bg-zinc-50 text-zinc-500 ${financeRowInput}`}
+              className={`rounded border border-border bg-muted text-muted-foreground ${financeRowInput}`}
               type="text"
               value={selected?.name ?? "Select a row above"}
               readOnly
             />
           </label>
-          <label className="grid gap-1 text-xs font-medium text-zinc-500">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
             Date Needed
             <input
-              className={`rounded border border-zinc-200 bg-zinc-50 text-zinc-500 ${financeRowInput}`}
+              className={`rounded border border-border bg-muted text-muted-foreground ${financeRowInput}`}
               type="text"
               value={selected?.date_needed ?? "—"}
               readOnly
             />
           </label>
-          <label className="grid gap-1 text-xs font-medium text-zinc-500">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
             Total
             <input
-              className={`rounded border border-zinc-200 bg-zinc-50 text-right text-zinc-500 ${financeRowInput}`}
+              className={`rounded border border-border bg-muted text-right text-muted-foreground ${financeRowInput}`}
               type="text"
               value={selected ? `₱${Number(selected.total_amount).toFixed(2)}` : "—"}
               readOnly
             />
           </label>
-          <label className="grid gap-1 text-xs font-medium text-zinc-500">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
             Requested By
             <input
-              className={`rounded border border-zinc-200 bg-zinc-50 text-zinc-500 ${financeRowInput}`}
+              className={`rounded border border-border bg-muted text-muted-foreground ${financeRowInput}`}
               type="text"
               value={selected?.prepared_by ?? "—"}
               readOnly
             />
           </label>
-          <label className="grid gap-1 text-xs font-medium text-zinc-500 sm:col-span-2">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground sm:col-span-2">
             Purpose
             <textarea
-              className={`min-h-[56px] rounded border border-zinc-200 bg-zinc-50 text-zinc-500 ${financeRowInput}`}
+              className={`min-h-[56px] rounded border border-border bg-muted text-muted-foreground ${financeRowInput}`}
               value={selected?.purpose ?? "—"}
               readOnly
             />
@@ -184,10 +184,10 @@ export default function PurchaseRequisitionApprovalPage() {
 
       <FinancePropertySection title="Approval">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <label className="grid gap-1 text-xs font-medium text-zinc-500">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
             Recommending Approval
             <input
-              className={`rounded border border-zinc-200 ${financeRowInput}`}
+              className={`rounded border border-border ${financeRowInput}`}
               type="text"
               value={recommendingApproval}
               onChange={(e) => setRecommendingApproval(e.target.value)}
@@ -195,19 +195,19 @@ export default function PurchaseRequisitionApprovalPage() {
               disabled={!selected}
             />
           </label>
-          <label className="grid gap-1 text-xs font-medium text-zinc-500">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
             Approved By
             <input
-              className={`rounded border border-zinc-200 bg-zinc-50 text-zinc-500 ${financeRowInput}`}
+              className={`rounded border border-border bg-muted text-muted-foreground ${financeRowInput}`}
               type="text"
               value="Assigned on approval"
               readOnly
             />
           </label>
-          <label className="grid gap-1 text-xs font-medium text-zinc-500">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
             Approval Status
             <select
-              className={`rounded border border-zinc-200 ${financeRowSelect}`}
+              className={`rounded border border-border ${financeRowSelect}`}
               value={approvalStatus}
               onChange={(e) => setApprovalStatus(e.target.value as ApprovalStatus)}
               disabled={!selected}
@@ -217,19 +217,19 @@ export default function PurchaseRequisitionApprovalPage() {
               <option value="Denied">Denied</option>
             </select>
           </label>
-          <label className="grid gap-1 text-xs font-medium text-zinc-500">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
             Approval Date
             <input
-              className={`rounded border border-zinc-200 bg-zinc-50 text-zinc-500 ${financeRowInput}`}
+              className={`rounded border border-border bg-muted text-muted-foreground ${financeRowInput}`}
               type="text"
               value="Assigned on approval"
               readOnly
             />
           </label>
-          <label className="grid gap-1 text-xs font-medium text-zinc-500 sm:col-span-2">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground sm:col-span-2">
             Approval Remarks
             <textarea
-              className={`min-h-[56px] rounded border border-zinc-200 ${financeRowInput}`}
+              className={`min-h-[56px] rounded border border-border ${financeRowInput}`}
               value={approvalRemarks}
               onChange={(e) => setApprovalRemarks(e.target.value)}
               disabled={!selected}

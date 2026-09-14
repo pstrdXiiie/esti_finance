@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
@@ -8,8 +8,8 @@ import { toast } from "sonner"
 
 import { frappe, getErrorMessage } from "@/lib/frappe"
 import { GLEntryGrid } from "@/components/sms/GLEntryGrid"
-import { FinancePropertyPanel } from "@/components/finance/FinancePropertyPanel"
-import { financeRowInput } from "@/lib/finance-ui"
+import { FinancePropertySection } from "@/components/finance/FinancePropertyPanel"
+import { financeRowInput, financePrimaryButton } from "@/lib/finance-ui"
 
 interface ChequeVoucherValues {
   payee?: string
@@ -27,6 +27,15 @@ const GL_ENTRIES_SPEC = {
   columns: [],
 }
 
+/**
+ * Restyled to match VoucherEntryForm's (Journal Voucher's) plain layout —
+ * title/description header, a Details section of grid fields, the GL entry
+ * grid, a Totals section, and a bottom-right Save button — instead of the
+ * earlier bespoke "disbursement voucher" check-card look. Kept as its own
+ * component (rather than reusing VoucherEntryForm directly) since it needs
+ * its own bespoke fields (payee, check number/date, amount) that
+ * VoucherEntryForm's generic naming-series + remark shape doesn't cover.
+ */
 export function ChequeVoucherForm({ name, basePath }: { name?: string; basePath?: string }) {
   const doctype = "SMS Cheque Voucher Entry"
   const router = useRouter()
@@ -62,6 +71,19 @@ export function ChequeVoucherForm({ name, basePath }: { name?: string; basePath?
     }
   }, [doc, reset, rows])
 
+  const totals = useMemo<{ debit: number; credit: number }>(() => {
+    return rows.reduce<{ debit: number; credit: number }>(
+      (acc, r) => {
+        acc.debit += Number(r.debit ?? 0)
+        acc.credit += Number(r.credit ?? 0)
+        return acc
+      },
+      { debit: 0, credit: 0 }
+    )
+  }, [rows])
+
+  const isBalanced = rows.length === 0 || totals.debit === totals.credit
+
   const saveMutation = useMutation({
     mutationFn: async (values: ChequeVoucherValues) => {
       const payload = { ...values, gl_entries: rows }
@@ -85,84 +107,116 @@ export function ChequeVoucherForm({ name, basePath }: { name?: string; basePath?
   }
 
   return (
-    <form onSubmit={handleSubmit((values) => saveMutation.mutate(values))}>
-      <FinancePropertyPanel
-        title={`Check Voucher Transaction — ${name ?? "New"}`}
-        onCancel={basePath ? () => router.push(basePath) : undefined}
-        onSave={handleSubmit((values) => saveMutation.mutate(values))}
-        saveLabel="Post Voucher"
-        isSaving={saveMutation.isPending}
-      >
-        <div className="m-4 rounded-md border border-[#D9DCE3] bg-[#F7F5F0] text-[#1B2A4A]">
-          <div className="flex items-start justify-between px-7 pb-4 pt-6">
-            <div>
-              <p className="font-serif text-[15px] font-semibold tracking-wide">Esti School Finance Office</p>
-              <p className="mt-0.5 text-[10px] tracking-wider text-[#5B6B85]">DISBURSEMENT VOUCHER</p>
-            </div>
-            <div className="text-right">
-              <span className="text-[10px] text-[#5B6B85]">Date</span>
-              <input
-                type="date"
-                {...register("date")}
-                className="ml-1.5 border-b border-[#D9DCE3] bg-transparent px-0 py-0.5 text-right font-mono text-xs text-[#1B2A4A] focus:outline-none"
-              />
-            </div>
-          </div>
+    <form
+      className="grid max-w-3xl gap-6"
+      onSubmit={handleSubmit((values) => saveMutation.mutate(values))}
+    >
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">
+            {name ? `Cheque Voucher — ${name}` : "New Cheque Voucher"}
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Record a check disbursement and its offsetting GL entries.
+          </p>
+        </div>
+        {basePath && (
+          <button
+            type="button"
+            className="text-sm text-muted-foreground hover:underline"
+            onClick={() => router.push(basePath)}
+          >
+            Cancel
+          </button>
+        )}
+      </div>
 
-          <div className="flex items-baseline gap-2.5 px-7 pb-1 pt-1.5">
-            <span className="whitespace-nowrap text-xs text-[#5B6B85]">Payee</span>
+      <FinancePropertySection title="Details">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
+            Payee
             <input
               {...register("payee")}
               placeholder="Payee name"
-              className="flex-1 border-b border-[#1B2A4A] bg-transparent px-0.5 py-1 font-serif text-[15px] italic text-[#1B2A4A] focus:outline-none"
+              className={`rounded border border-border ${financeRowInput}`}
             />
-            <span className="text-xs text-[#5B6B85]">Amount ₱</span>
+          </label>
+
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
+            Amount
             <input
               {...register("amount")}
               placeholder="0.00"
-              className="w-28 border-b border-[#1B2A4A] bg-transparent px-0.5py-1 text-right font-mono text-[15px] text-[#1B2A4A] focus:outline-none"
+              className={`rounded border border-border ${financeRowInput}`}
             />
-          </div>
+          </label>
 
-          <div className="grid grid-cols-2 gap-5 px-7 pb-5 pt-3">
-            <div>
-              <p className="mb-1 text-[10px] tracking-wide text-[#5B6B85]">CHECK NUMBER</p>
-              <input
-                {...register("check_number")}
-                placeholder="Check number"
-                className="w-full border-b border-[#D9DCE3] bg-transparent px-0.5 py-1 font-mono text-sm text-[#1B2A4A] focus:outline-none"
-              />
-            </div>
-            <div>
-              <p className="mb-1 text-[10px] tracking-wide text-[#5B6B85]">CHECK DATE</p>
-              <input
-                type="date"
-                {...register("check_date")}
-                className="w-full border-b border-[#D9DCE3] bg-transparent px-0.5 py-1 font-mono text-sm text-[#1B2A4A] focus:outline-none"
-              />
-            </div>
-          </div>
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
+            Date
+            <input
+              type="date"
+              {...register("date")}
+              className={`rounded border border-border ${financeRowInput}`}
+            />
+          </label>
 
-          <div className="flex justify-end gap-5 px-7 pb-4.5">
-            <div className="w-52 text-center">
-              <div className="h-5.5 border-b border-[#1B2A4A]" />
-              <p className="mt-0.5 text-[9px] tracking-wide text-[#5B6B85]">AUTHORIZED SIGNATURE</p>
-            </div>
-          </div>
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
+            Check Number
+            <input
+              {...register("check_number")}
+              placeholder="Check number"
+              className={`rounded border border-border ${financeRowInput}`}
+            />
+          </label>
 
-          <div className="flex justify-between rounded-b-md bg-[#1B2A4A] px-7py-2">
-            <span className="font-mono text-xs tracking-[0.18em] text-[#E7EAF2]">⑈{name ?? "NEW"}⑈</span>
-            <span className="font-mono text-xs tracking-[0.18em] text-[#E7EAF2]">₱ auto</span>
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
+            Check Date
+            <input
+              type="date"
+              {...register("check_date")}
+              className={`rounded border border-border ${financeRowInput}`}
+            />
+          </label>
+
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground sm:col-span-2">
+            Notes
+            <textarea
+              {...register("notes")}
+              placeholder="Reason for this disbursement…"
+              rows={2}
+              className={`min-h-[72px] rounded border border-border ${financeRowInput}`}
+            />
+          </label>
+        </div>
+      </FinancePropertySection>
+
+      <GLEntryGrid spec={GL_ENTRIES_SPEC} rows={rows} onChange={setRows} />
+
+      <FinancePropertySection title="Totals">
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <div className="rounded-lg border border-border bg-muted p-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Total Debit</p>
+            <p className="mt-1 font-mono text-base text-foreground">₱{totals.debit.toFixed(2)}</p>
+          </div>
+          <div className="rounded-lg border border-border bg-muted p-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Total Credit</p>
+            <p className="mt-1 font-mono text-base text-foreground">₱{totals.credit.toFixed(2)}</p>
           </div>
         </div>
+      </FinancePropertySection>
 
-        <GLEntryGrid spec={GL_ENTRIES_SPEC} rows={rows} onChange={setRows} />
-
-        <div className="border-t border-zinc-200 px-5 py-4">
-          <p className="mb-1 text-xs text-zinc-500">Notes</p>
-          <textarea {...register("notes")} placeholder="Notes" rows={2} className={`rounded border border-zinc-200 ${financeRowInput}`} />
-        </div>
-      </FinancePropertyPanel>
+      <div className="flex items-center justify-end gap-3">
+        {rows.length > 0 && !isBalanced && (
+          <span className="text-xs text-amber-700">Debits and credits must match before saving.</span>
+        )}
+        <button
+          type="submit"
+          className={financePrimaryButton}
+          disabled={!isBalanced || saveMutation.isPending}
+        >
+          {saveMutation.isPending ? "Saving…" : "Post Voucher"}
+        </button>
+      </div>
     </form>
   )
 }

@@ -125,7 +125,7 @@ export function StudentAssessmentLedgerDialog({
 
         <div className="max-h-80 overflow-auto rounded-lg border">
           <table className="w-full text-sm">
-            <thead className="sticky top-0 bg-zinc-50 text-xs uppercase text-zinc-500">
+            <thead className="sticky top-0 bg-muted text-xs uppercase text-muted-foreground">
               <tr>
                 <th className="px-3 py-2 text-left">Date</th>
                 <th className="px-3 py-2 text-left">Transaction</th>
@@ -138,7 +138,7 @@ export function StudentAssessmentLedgerDialog({
             <tbody>
               {isLoading && (
                 <tr>
-                  <td colSpan={6} className="px-3 py-4 text-center text-zinc-400">
+                  <td colSpan={6} className="px-3 py-4 text-center text-muted-foreground">
                     Loading…
                   </td>
                 </tr>

@@ -167,10 +167,10 @@ export default function TransactionsPage() {
     <div className="grid gap-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           Transactions
         </h1>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mt-1 text-sm text-muted-foreground">
           Select a transaction type below.
         </p>
       </div>
@@ -178,7 +178,7 @@ export default function TransactionsPage() {
       {/* Groups */}
       {GROUPS.map((group) => (
         <div key={group.category} className="grid gap-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {group.category}
           </p>
 
@@ -190,7 +190,7 @@ export default function TransactionsPage() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`group relative overflow-hidden rounded-xl border border-zinc-200 bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950 ${
+                  className={`group relative overflow-hidden rounded-xl border border-border bg-card p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${
                     item.hoverBorder
                   } ${item.width ?? ""} ${item.height ?? "min-h-[110px]"}`}
                 >
@@ -203,11 +203,11 @@ export default function TransactionsPage() {
                         <Icon className="h-4 w-4" />
                       </div>
 
-                      <ArrowUpRight className="h-4 w-4 text-zinc-400 transition-all duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-zinc-800 dark:group-hover:text-zinc-200" />
+                      <ArrowUpRight className="h-4 w-4 text-muted-foreground transition-all duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-foreground" />
                     </div>
 
                     {/* Bottom Title */}
-                    <span className="text-sm font-medium leading-snug text-zinc-900 transition-colors duration-300 group-hover:text-zinc-950 dark:text-zinc-100 dark:group-hover:text-white">
+                    <span className="text-sm font-medium leading-snug text-foreground transition-colors duration-300 group-hover:text-foreground">
                       {item.title}
                     </span>
                   </div>

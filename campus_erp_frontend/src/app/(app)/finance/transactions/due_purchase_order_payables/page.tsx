@@ -50,13 +50,13 @@ interface GLRow {
 const today = () => new Date().toISOString().slice(0, 10)
 
 const dueColumns: FinanceRecordColumn<DuePayableRow>[] = [
-  { key: "ponum", label: "ponum", render: (r) => <span className="font-medium text-zinc-900">{r.ponum}</span> },
-  { key: "supcode", label: "supcode", render: (r) => <span className="text-zinc-500">{r.supcode}</span> },
-  { key: "supname", label: "supname", render: (r) => <span className="text-zinc-500">{r.supname}</span> },
-  { key: "podate", label: "podate", render: (r) => <span className="text-zinc-500">{r.podate}</span> },
-  { key: "date_posted", label: "date_posted", render: (r) => <span className="text-zinc-500">{r.date_posted}</span> },
-  { key: "sinum", label: "sinum", render: (r) => <span className="text-zinc-500">{r.sinum}</span> },
-  { key: "poterms", label: "poterms", render: (r) => <span className="text-zinc-500">{r.poterms}</span> },
+  { key: "ponum", label: "ponum", render: (r) => <span className="font-medium text-foreground">{r.ponum}</span> },
+  { key: "supcode", label: "supcode", render: (r) => <span className="text-muted-foreground">{r.supcode}</span> },
+  { key: "supname", label: "supname", render: (r) => <span className="text-muted-foreground">{r.supname}</span> },
+  { key: "podate", label: "podate", render: (r) => <span className="text-muted-foreground">{r.podate}</span> },
+  { key: "date_posted", label: "date_posted", render: (r) => <span className="text-muted-foreground">{r.date_posted}</span> },
+  { key: "sinum", label: "sinum", render: (r) => <span className="text-muted-foreground">{r.sinum}</span> },
+  { key: "poterms", label: "poterms", render: (r) => <span className="text-muted-foreground">{r.poterms}</span> },
   { key: "potax", label: "potax", align: "right", render: (r) => Number(r.potax).toFixed(2) },
   { key: "poamount", label: "poamount", align: "right", render: (r) => Number(r.poamount).toFixed(2) },
   { key: "aging", label: "aging", align: "right", render: (r) => r.aging },
@@ -188,8 +188,8 @@ export default function AccountsPayablePage() {
   return (
     <div className="grid max-w-4xl gap-6">
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">Due Purchase Order Payables</h1>
-        <p className="mt-1 text-sm text-zinc-500">
+        <h1 className="text-2xl font-semibold text-foreground">Due Purchase Order Payables</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Update items on-hand quantity based on items received from the Purchase Order. Once posted to GL, a PO
           receipt can never be cancelled.
         </p>
@@ -198,7 +198,7 @@ export default function AccountsPayablePage() {
         title="Due Purchase Order Payables"
         right={
           <input
-            className={`w-48 rounded border border-zinc-200 ${financeRowInput}`}
+            className={`w-48 rounded border border-border ${financeRowInput}`}
             type="text"
             value={supplierFilter}
             onChange={(e) => setSupplierFilter(e.target.value)}
@@ -221,17 +221,17 @@ export default function AccountsPayablePage() {
 
       <FinancePropertySection title="Voucher Details">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
-          <label className="grid gap-1 text-xs font-medium text-zinc-500">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
             PO #
-            <input id="ap-po-search" className={`rounded border border-zinc-200 ${financeRowInput}`} type="text" value={poNum} onChange={(e) => setPoNum(e.target.value)} />
+            <input id="ap-po-search" className={`rounded border border-border ${financeRowInput}`} type="text" value={poNum} onChange={(e) => setPoNum(e.target.value)} />
           </label>
-          <label className="grid gap-1 text-xs font-medium text-zinc-500">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
             Date PO Posted
-            <input className={`rounded border border-zinc-200 bg-zinc-50 text-zinc-500 ${financeRowInput}`} type="text" value={datePoPosted} readOnly />
+            <input className={`rounded border border-border bg-muted text-muted-foreground ${financeRowInput}`} type="text" value={datePoPosted} readOnly />
           </label>
-          <label className="grid gap-1 text-xs font-medium text-zinc-500">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
             Terms
-            <select className={`rounded border border-zinc-200 ${financeRowSelect}`} value={terms} onChange={(e) => setTerms(e.target.value)}>
+            <select className={`rounded border border-border ${financeRowSelect}`} value={terms} onChange={(e) => setTerms(e.target.value)}>
               <option value="">—</option>
               <option value="Cash">Cash</option>
               <option value="Net 15">Net 15</option>
@@ -240,36 +240,36 @@ export default function AccountsPayablePage() {
               <option value="COD">COD</option>
             </select>
           </label>
-          <label className="grid gap-1 text-xs font-medium text-zinc-500">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
             S.I. Number
-            <input className={`rounded border border-zinc-200 ${financeRowInput}`} type="text" value={siNumber} onChange={(e) => setSiNumber(e.target.value)} />
+            <input className={`rounded border border-border ${financeRowInput}`} type="text" value={siNumber} onChange={(e) => setSiNumber(e.target.value)} />
           </label>
 
-          <label className="grid gap-1 text-xs font-medium text-zinc-500 sm:col-span-2">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground sm:col-span-2">
             Pay to
-            <input className={`rounded border border-zinc-200 ${financeRowInput}`} type="text" value={payTo} onChange={(e) => setPayTo(e.target.value)} />
+            <input className={`rounded border border-border ${financeRowInput}`} type="text" value={payTo} onChange={(e) => setPayTo(e.target.value)} />
           </label>
-          <label className="grid gap-1 text-xs font-medium text-zinc-500">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
             Tax %
-            <input className={`rounded border border-zinc-200 text-right ${financeRowInput}`} type="number" value={taxPercent} onChange={(e) => setTaxPercent(e.target.value)} />
+            <input className={`rounded border border-border text-right ${financeRowInput}`} type="number" value={taxPercent} onChange={(e) => setTaxPercent(e.target.value)} />
           </label>
-          <label className="grid gap-1 text-xs font-medium text-zinc-500">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
             Amount
-            <input className={`rounded border border-zinc-200 text-right ${financeRowInput}`} type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
+            <input className={`rounded border border-border text-right ${financeRowInput}`} type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
           </label>
 
-          <label className="grid gap-1 text-xs font-medium text-zinc-500">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
             Check Number
-            <input className={`rounded border border-zinc-200 ${financeRowInput}`} type="text" value={checkNumber} onChange={(e) => setCheckNumber(e.target.value)} />
+            <input className={`rounded border border-border ${financeRowInput}`} type="text" value={checkNumber} onChange={(e) => setCheckNumber(e.target.value)} />
           </label>
-          <label className="grid gap-1 text-xs font-medium text-zinc-500">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
             Check Date
-            <input className={`rounded border border-zinc-200 ${financeRowInput}`} type="date" value={checkDate} onChange={(e) => setCheckDate(e.target.value)} />
+            <input className={`rounded border border-border ${financeRowInput}`} type="date" value={checkDate} onChange={(e) => setCheckDate(e.target.value)} />
           </label>
 
-          <label className="grid gap-1 text-xs font-medium text-zinc-500 sm:col-span-4">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground sm:col-span-4">
             Notes
-            <input className={`rounded border border-zinc-200 ${financeRowInput}`} type="text" value={notes} onChange={(e) => setNotes(e.target.value)} />
+            <input className={`rounded border border-border ${financeRowInput}`} type="text" value={notes} onChange={(e) => setNotes(e.target.value)} />
           </label>
         </div>
       </FinancePropertySection>
@@ -286,7 +286,7 @@ export default function AccountsPayablePage() {
           ) : undefined
         }
       >
-        <div className="grid grid-cols-[100px_1fr_90px_90px_20px] border-b border-zinc-200 pb-1.5 text-[11px] font-medium uppercase tracking-wide text-zinc-400">
+        <div className="grid grid-cols-[100px_1fr_90px_90px_20px] border-b border-border pb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
           <span>Acct #</span>
           <span>Acct Name</span>
           <span className="text-right">Debit</span>
@@ -294,28 +294,28 @@ export default function AccountsPayablePage() {
           <span />
         </div>
         {glRows.map((row, i) => (
-          <div key={i} className="grid grid-cols-[100px_1fr_90px_90px_20px] items-center border-b border-zinc-100 py-1.5 text-[13px] last:border-b-0">
+          <div key={i} className="grid grid-cols-[100px_1fr_90px_90px_20px] items-center border-b border-border py-1.5 text-[13px] last:border-b-0">
             <span>{row.account_number}</span>
             <span>{row.account_name}</span>
             <span className="text-right font-mono">{row.debit > 0 ? row.debit.toFixed(2) : "—"}</span>
             <span className="text-right font-mono">{row.credit > 0 ? row.credit.toFixed(2) : "—"}</span>
-            <button type="button" onClick={() => removeGlRow(i)} className="text-center text-xs text-zinc-400 hover:text-red-600">✕</button>
+            <button type="button" onClick={() => removeGlRow(i)} className="text-center text-xs text-muted-foreground hover:text-red-600">✕</button>
           </div>
         ))}
 
         <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-          <select className={`min-w-[160px] flex-1 rounded border border-zinc-200 ${financeRowSelect}`} value={glAccount} onChange={(e) => setGlAccount(e.target.value)}>
+          <select className={`min-w-[160px] flex-1 rounded border border-border ${financeRowSelect}`} value={glAccount} onChange={(e) => setGlAccount(e.target.value)}>
             <option value="">+ Chart of Account…</option>
             {accounts.map((a) => (
               <option key={a.name} value={a.name}>{a.account_number} - {a.account_name}</option>
             ))}
           </select>
-          <input className={`w-20 shrink-0 rounded border border-zinc-200 ${financeRowInput}`} type="number" value={glAmount} onChange={(e) => setGlAmount(e.target.value)} placeholder="0.00" />
-          <div className="flex shrink-0 overflow-hidden rounded border border-zinc-200">
-            <button type="button" onClick={() => setGlDrCr("DR")} className={`px-2.5 py-1.5 text-[11px] ${glDrCr === "DR" ? "bg-amber-700 text-white" : "text-zinc-500"}`}>DR</button>
-            <button type="button" onClick={() => setGlDrCr("CR")} className={`border-l border-zinc-200 px-2.5 py-1.5 text-[11px] ${glDrCr === "CR" ? "bg-amber-700 text-white" : "text-zinc-500"}`}>CR</button>
+          <input className={`w-20 shrink-0 rounded border border-border ${financeRowInput}`} type="number" value={glAmount} onChange={(e) => setGlAmount(e.target.value)} placeholder="0.00" />
+          <div className="flex shrink-0 overflow-hidden rounded border border-border">
+            <button type="button" onClick={() => setGlDrCr("DR")} className={`px-2.5 py-1.5 text-[11px] ${glDrCr === "DR" ? "bg-amber-700 text-white" : "text-muted-foreground"}`}>DR</button>
+            <button type="button" onClick={() => setGlDrCr("CR")} className={`border-l border-border px-2.5 py-1.5 text-[11px] ${glDrCr === "CR" ? "bg-amber-700 text-white" : "text-muted-foreground"}`}>CR</button>
           </div>
-          <button type="button" className="shrink-0 rounded-md bg-zinc-900 px-3.5 py-1.5 text-xs font-medium text-white hover:bg-zinc-700" onClick={addGlRow}>Add</button>
+          <button type="button" className="shrink-0 rounded-md bg-primary px-3.5 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90" onClick={addGlRow}>Add</button>
         </div>
 
         <div className="mt-3 flex justify-end gap-6 text-sm">

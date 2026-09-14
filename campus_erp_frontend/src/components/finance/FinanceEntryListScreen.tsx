@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, type ReactNode } from "react"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Pencil, Printer, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -34,9 +34,16 @@ import { FinanceEntryScreen } from "@/components/finance/FinanceEntryScreen"
 
 /**
  * Finance-styled counterpart to EntryListScreen: same spec-driven table,
- * but "New"/row-click opens the form in a Dialog instead of navigating to a
- * separate route or expanding inline. Registrar's curriculum/permits keep
- * using EntryListScreen + real routes; this is finance-only.
+ * but "New"/row-click opens the form either in a Dialog (default) or
+ * inline on the same page (formDisplay="inline"), instead of navigating to
+ * a separate route. Registrar's curriculum/permits keep using
+ * EntryListScreen + real routes; this is finance-only.
+ *
+ * formDisplay defaults to "dialog" so existing consumers (Chart of
+ * Accounts, Sundry Account, Cash Receipt, Discounts, etc.) keep their
+ * current popup behavior unchanged. Pass formDisplay="inline" for screens
+ * that should show the form embedded above the table instead (Student
+ * Accounts, Purchase Order, Purchase Requisition).
  *
  * If spec has a "root_type" field, a Root Type filter dropdown is rendered
  * above the table (driven by that field's options string), and a Print
@@ -50,10 +57,13 @@ import { FinanceEntryScreen } from "@/components/finance/FinanceEntryScreen"
 export function FinanceEntryListScreen({
   spec,
   renderExtra,
+  formDisplay = "dialog",
 }: {
   spec: EntrySpec
   /** Extra content rendered below the form, only when editing an existing record. */
   renderExtra?: (name: string) => ReactNode
+  /** "dialog" (default, unchanged popup behavior) or "inline" (form embedded above the table). */
+  formDisplay?: "dialog" | "inline"
 }) {
   const queryClient = useQueryClient()
   const [deleteTarget, setDeleteTarget] = useState<Record<string, unknown> | null>(null)
@@ -63,6 +73,40 @@ export function FinanceEntryListScreen({
 
   const listColumns = spec.fields.filter((f) => f.inListView)
   const columns = listColumns.length ? listColumns : spec.fields.slice(0, 4)
+
+const linkColumns = columns.filter(
+  (c) => c.fieldtype === "Link" && c.options && c.linkLabelFields?.length
+)
+
+const linkLabelQueries = useQueries({
+  queries: linkColumns.map((c) => ({
+    queryKey: ["Link", "labels", c.options, c.linkLabelFields],
+    queryFn: () =>
+      frappe.list<Record<string, unknown> & { name: string }>(c.options as string, {
+        fields: ["name", ...(c.linkLabelFields ?? [])],
+        limit_page_length: 1000,
+      }),
+  })),
+})
+
+const linkLabelMaps = linkColumns.reduce<Record<string, Record<string, string>>>((acc, c, i) => {
+  const rows = linkLabelQueries[i]?.data ?? []
+  acc[c.fieldname] = Object.fromEntries(
+    rows.map((r) => [
+      r.name,
+      (c.linkLabelFields ?? []).map((f) => r[f]).filter(Boolean).join(" ") || r.name,
+    ])
+  )
+  return acc
+}, {})
+
+function formatCell(c: (typeof columns)[number], row: Record<string, unknown>): string {
+  const raw = row[c.fieldname]
+  if (c.fieldtype === "Link" && linkLabelMaps[c.fieldname]) {
+    return linkLabelMaps[c.fieldname][String(raw)] ?? String(raw ?? "")
+  }
+  return String(raw ?? "")
+}
 
   const rootTypeField = spec.fields.find((f) => f.fieldname === "root_type")
   const rootTypeOptions = rootTypeField?.options
@@ -145,6 +189,8 @@ export function FinanceEntryListScreen({
     queryClient.invalidateQueries({ queryKey: [spec.doctype, "list"] })
   }
 
+  const inline = formDisplay === "inline"
+
   return (
     <div className="grid gap-4">
       <div className="print-hide flex items-center justify-between">
@@ -178,9 +224,25 @@ export function FinanceEntryListScreen({
               </Button>
             </>
           )}
-          <Button onClick={openNew}>Add {spec.title}</Button>
+          {!(inline && formOpen) && <Button onClick={openNew}>Add {spec.title}</Button>}
         </div>
       </div>
+
+      {/* Inline form panel — embedded on the same page, above the table. */}
+      {inline && formOpen && (
+        <div className="print-hide rounded-md border">
+          <FinanceEntryScreen
+            spec={spec}
+            name={activeName}
+            onSaved={(savedName) => {
+              setActiveName(savedName)
+              closeForm()
+            }}
+            onCancel={closeForm}
+          />
+          {activeName && renderExtra?.(activeName)}
+        </div>
+      )}
 
       {isLoading ? (
         <Skeleton className="print-hide h-64 w-full" />
@@ -188,13 +250,13 @@ export function FinanceEntryListScreen({
         <div className="print-hide overflow-x-auto rounded-md border">
           <Table>
             <TableHeader>
-              <TableRow className="justify-between bg-slate-900 hover:bg-slate-900 hover:text-white">
+              <TableRow>
                 {columns.map((c) => (
-                  <TableHead className="hover:text-white text-white" key={c.fieldname}>
+                  <TableHead key={c.fieldname}>
                     {c.label}
                   </TableHead>
                 ))}
-                <TableHead className="w-24 text-right hover:text-white text-white">Actions</TableHead>
+                <TableHead className="w-24 text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -208,10 +270,10 @@ export function FinanceEntryListScreen({
                           onClick={() => openRow(String(row.name))}
                           className="font-medium hover:underline"
                         >
-                          {String(row[c.fieldname] ?? row.name)}
+                         {formatCell(c, row) || String(row.name)}
                         </button>
                       ) : (
-                        String(row[c.fieldname] ?? "")
+                       formatCell(c, row)
                       )}
                     </TableCell>
                   ))}
@@ -273,7 +335,7 @@ export function FinanceEntryListScreen({
                     <tr key={String(row.name)} className="border-b border-zinc-300">
                       {columns.map((c) => (
                         <td key={c.fieldname} className="py-1 pr-4">
-                          {String(row[c.fieldname] ?? "")}
+                         {formatCell(c, row)}
                         </td>
                       ))}
                     </tr>
@@ -285,25 +347,27 @@ export function FinanceEntryListScreen({
         </div>
       )}
 
-      <Dialog open={formOpen} onOpenChange={(open) => !open && closeForm()}>
-        <DialogContent
-          showCloseButton={false}
-          className="max-h-[90vh] w-fit max-w-[calc(100%-2rem)] overflow-y-auto border-none bg-transparent p-0 shadow-none ring-0 sm:max-w-2xl"
-        >
-          <DialogTitle className="sr-only">
-            {activeName ? `Edit ${spec.title} — ${activeName}` : `New ${spec.title}`}
-          </DialogTitle>
-          <FinanceEntryScreen
-            spec={spec}
-            name={activeName}
-            onSaved={(savedName) => {
-              setActiveName(savedName)
-              closeForm()
-            }}
-          />
-          {activeName && renderExtra?.(activeName)}
-        </DialogContent>
-      </Dialog>
+      {!inline && (
+        <Dialog open={formOpen} onOpenChange={(open) => !open && closeForm()}>
+          <DialogContent
+            showCloseButton={false}
+            className="max-h-[90vh] w-fit max-w-[calc(100%-2rem)] overflow-y-auto border-none bg-transparent p-0 shadow-none ring-0 sm:max-w-2xl"
+          >
+            <DialogTitle className="sr-only">
+              {activeName ? `Edit ${spec.title} — ${activeName}` : `New ${spec.title}`}
+            </DialogTitle>
+            <FinanceEntryScreen
+              spec={spec}
+              name={activeName}
+              onSaved={(savedName) => {
+                setActiveName(savedName)
+                closeForm()
+              }}
+            />
+            {activeName && renderExtra?.(activeName)}
+          </DialogContent>
+        </Dialog>
+      )}
 
       <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent className="sm:max-w-md">

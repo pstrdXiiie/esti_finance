@@ -66,7 +66,7 @@ export function DynamicField<T extends FieldValues>({
             {spec.fieldtype === "Select" ? (
               <Select
                 onValueChange={field.onChange}
-                defaultValue={field.value}
+                value={field.value ?? ""}
                 disabled={spec.readOnly}
               >
                 <SelectTrigger className="w-full min-w-0">
