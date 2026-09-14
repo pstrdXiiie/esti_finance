@@ -16,6 +16,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import StudentSearch, { StudentOption } from "@/components/sms/StudentSearch"
+import { FinancePropertySection } from "@/components/finance/FinancePropertyPanel"
+import { FinanceRecordTable, type FinanceRecordColumn } from "@/components/sms/FinanceRecordTable"
 
 interface AssessmentRow {
   name: string
@@ -29,6 +31,32 @@ interface AssessmentRow {
   receivable: number
   receivable_account: string | null
 }
+
+interface ProgramEnrollmentRow {
+  name: string
+  program: string
+  year_level: number | null
+}
+
+interface PaymentEntryRow {
+  name: string
+  posting_date: string
+  party_name: string
+  paid_amount: number
+  mode_of_payment: string | null
+  reference_no: string | null
+}
+
+const RECENT_PAYMENTS_KEY = ["Payment Entry", "recent-student-payments"]
+
+const recentPaymentColumns: FinanceRecordColumn<PaymentEntryRow>[] = [
+  { key: "name", label: "OR #", render: (r) => <span className="font-medium text-foreground">{r.name}</span> },
+  { key: "posting_date", label: "Date", render: (r) => <span className="text-muted-foreground">{r.posting_date}</span> },
+  { key: "party_name", label: "Student", render: (r) => <span className="text-muted-foreground">{r.party_name}</span> },
+  { key: "mode_of_payment", label: "Mode", render: (r) => <span className="text-muted-foreground">{r.mode_of_payment ?? "—"}</span> },
+  { key: "reference_no", label: "Reference", render: (r) => <span className="text-muted-foreground">{r.reference_no ?? "—"}</span> },
+  { key: "paid_amount", label: "Amount", align: "right", render: (r) => `₱${formatCurrency(r.paid_amount)}` },
+]
 
 type ModeOfPayment = "Cash" | "Cheque"
 
@@ -120,6 +148,19 @@ export default function PaymentsCashReceipt({
 
   const assessments = assessmentsQuery.data ?? []
 
+  const enrollmentQuery = useQuery({
+    queryKey: ["Program Enrollment", "current", student?.name],
+    queryFn: () =>
+      frappe.list<ProgramEnrollmentRow>("Program Enrollment", {
+        filters: [["student", "=", student!.name]],
+        fields: ["name", "program", "year_level"],
+        order_by: "enrollment_date desc",
+        limit_page_length: 1,
+      }),
+    enabled: !!student,
+  })
+  const enrollment = enrollmentQuery.data?.[0] ?? null
+
   const accountsQuery = useQuery({
     queryKey: ["Account", "leaf", "for-payment"],
     queryFn: () =>
@@ -130,6 +171,26 @@ export default function PaymentsCashReceipt({
       }),
   })
   const accounts = accountsQuery.data ?? []
+
+  // Recent entries, scoped to the selected student once one is picked —
+  // otherwise the most recent cash receipts across all students, so the
+  // list is never empty just because no student is selected yet.
+  const recentPaymentsQuery = useQuery({
+    queryKey: [...RECENT_PAYMENTS_KEY, student?.name],
+    queryFn: () =>
+      frappe.list<PaymentEntryRow>("Payment Entry", {
+        filters: [
+          ["party_type", "=", "Student"],
+          ["payment_type", "=", "Receive"],
+          ["docstatus", "=", 1],
+          ...(student ? [["party", "=", student.name] as [string, string, string]] : []),
+        ],
+        fields: ["name", "posting_date", "party_name", "paid_amount", "mode_of_payment", "reference_no"],
+        order_by: "posting_date desc, creation desc",
+        limit_page_length: 20,
+      }),
+  })
+  const recentPayments = recentPaymentsQuery.data ?? []
 
   const [syncedStudentForAssessment, setSyncedStudentForAssessment] = useState<string | undefined>(undefined)
   if (student && student.name !== syncedStudentForAssessment && assessmentsQuery.isFetched) {
@@ -183,6 +244,7 @@ export default function PaymentsCashReceipt({
       setAmount("")
       setReferenceNo("")
       await queryClient.invalidateQueries({ queryKey: ["SMS Student Assessment", "for-payment", student?.name] })
+      await queryClient.invalidateQueries({ queryKey: RECENT_PAYMENTS_KEY })
     },
     onError: (error) => toast.error(`Could not record payment: ${getErrorMessage(error)}`),
   })
@@ -241,6 +303,25 @@ export default function PaymentsCashReceipt({
           </Field>
         )}
       </div>
+
+      {student && (
+        <div className="grid gap-4 md:grid-cols-4 max-w-3xl rounded-md border p-4">
+          <Field label="Student ID">
+            <div className="text-sm font-medium">{student.stdnt_cno ?? "—"}</div>
+          </Field>
+          <Field label="Full Name">
+            <div className="text-sm font-medium">{student.student_name}</div>
+          </Field>
+          <Field label="Course">
+            <div className="text-sm font-medium">
+              {enrollment?.program ?? assessment?.program ?? "—"}
+            </div>
+          </Field>
+          <Field label="Year Level">
+            <div className="text-sm font-medium">{enrollment?.year_level ?? "—"}</div>
+          </Field>
+        </div>
+      )}
 
       {paymentMode === "assessment" && student && assessmentsQuery.isFetching && (
         <div className="text-sm text-muted-foreground">Loading…</div>
@@ -364,6 +445,16 @@ export default function PaymentsCashReceipt({
           </Button>
         </div>
       </div>
+
+      <FinancePropertySection title={student ? `Recent Payments — ${student.student_name}` : "Recent Payments"}>
+        <FinanceRecordTable
+          columns={recentPaymentColumns}
+          rows={recentPayments}
+          rowKey={(r) => r.name}
+          isLoading={recentPaymentsQuery.isLoading}
+          emptyMessage="No payments recorded yet."
+        />
+      </FinancePropertySection>
     </div>
   )
 }

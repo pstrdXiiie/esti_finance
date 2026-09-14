@@ -3,7 +3,7 @@
 import { useState, type ReactNode, type ChangeEvent } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { frappe, getErrorMessage } from "@/lib/frappe"
@@ -207,6 +207,7 @@ function computeAge(dateOfBirth: string): string {
  */
 export default function NewStudentPage() {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [currentStep, setCurrentStep] = useState(0)
 
   const [basicInfo, setBasicInfo] = useState<BasicInfoState>(INITIAL_BASIC_INFO)
@@ -421,6 +422,10 @@ export default function NewStudentPage() {
     },
     onSuccess: () => {
       toast.success("Student created")
+      // Broad "Student" prefix (not just "Student","list") so it also
+      // covers the Dashboard's ["Student","count","active"] / ["Student","recent"]
+      // widgets, not only the Students list screen.
+      queryClient.invalidateQueries({ queryKey: ["Student"] })
       router.push("/registrar/students")
     },
     onError: (error) => toast.error(getErrorMessage(error)),

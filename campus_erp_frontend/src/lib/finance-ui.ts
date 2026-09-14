@@ -1,5 +1,5 @@
 export const financeRowInput =
-  "w-full rounded border-none bg-transparent px-1.5 py-1 text-[13px] text-foreground hover:bg-muted focus:bg-muted focus:outline-none"
+  "w-full rounded border-none bg-transparent px-1.5 py-1 text-sm text-foreground hover:bg-muted focus:bg-muted focus:outline-none"
 
 export const financeRowSelect = financeRowInput
 
@@ -11,13 +11,13 @@ export const financePrimaryButton =
 export const financeSecondaryButton =
   "rounded-md border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted"
 
-export const financeAccentDot = "h-2 w-2 rounded-full bg-amber-700"
+export const financeAccentDot = "h-2 w-2 rounded-full bg-primary"
 
-export const financeAccentToggleOn = "bg-amber-700 text-white"
+export const financeAccentToggleOn = "bg-primary text-primary-foreground"
 export const financeAccentToggleOff = "text-muted-foreground"
 
 export function financeBalanceBadge(isBalanced: boolean) {
   return isBalanced
-    ? "text-xs font-semibold text-green-700"
-    : "text-xs font-semibold text-red-700"
+    ? "text-xs font-semibold text-primary"
+    : "text-xs font-semibold text-destructive"
 }

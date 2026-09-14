@@ -214,7 +214,7 @@ export function FinanceDynamicField<T extends FieldValues>({
               <p className="mt-1 text-xs text-muted-foreground">{spec.description}</p>
             )}
             {fieldState.error && (
-              <p className="mt-1 text-xs text-red-600">{fieldState.error.message}</p>
+              <p className="mt-1 text-xs text-destructive">{fieldState.error.message}</p>
             )}
           </>
         </FinancePropertyRow>

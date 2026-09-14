@@ -1,10 +1,11 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { useQuery } from "@tanstack/react-query"
-import { Save, Trash2, Printer, Search } from "lucide-react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { Save, RotateCcw, Printer, Search } from "lucide-react"
+import { toast } from "sonner"
 
-import { frappe } from "@/lib/frappe"
+import { frappe, getErrorMessage } from "@/lib/frappe"
 import { financeRowInput, financeRowSelect, financeBalanceBadge } from "@/lib/finance-ui"
 import { FinancePropertySection } from "@/components/finance/FinancePropertyPanel"
 import { FinanceRecordTable, type FinanceRecordColumn } from "@/components/sms/FinanceRecordTable"
@@ -12,13 +13,16 @@ import { FinanceVoucherToolbar, type FinanceToolbarAction } from "@/components/s
 
 // Rebuilt from two screenshots of the legacy "Accounts Payable" screen —
 // they're one form: the due-payables grid + voucher fields on top, GL
-// entries at the bottom. Backed by "SMS Due Purchase Order Payable" /
-// "SMS Due Purchase Order Payable GL Entry" (see
-// apps/campus_erp/campus_erp/finance/doctype/) and the
-// campus_erp.api.finance.get_due_purchase_order_payables RPC. Column
-// headers below (ponum, supcode, supname, podate, date_posted, sinum,
-// poterms, potax, poamount, aging) are taken verbatim from the legacy
-// grid header text — confirm they match your real PO fields.
+// entries at the bottom. There is no separate "SMS Due Purchase Order
+// Payable" doctype: this reads submitted Purchase Orders directly via
+// campus_erp.api.finance_purchasing.get_due_purchase_order_payables, and
+// "Save" posts a real Journal Entry via
+// campus_erp.api.finance_purchasing.settle_purchase_order_payable, which
+// also flips the PO's payables_settled / settlement_reference custom
+// fields — mirroring how Canteen PCV replenishment works. Column headers
+// below (ponum, supcode, supname, podate, date_posted, sinum, poterms,
+// potax, poamount, aging) are taken verbatim from the legacy grid header
+// text.
 
 interface DuePayableRow {
   ponum: string
@@ -49,6 +53,8 @@ interface GLRow {
 
 const today = () => new Date().toISOString().slice(0, 10)
 
+const STANDARD_TERMS = ["Cash", "Net 15", "Net 30", "Net 60", "COD"]
+
 const dueColumns: FinanceRecordColumn<DuePayableRow>[] = [
   { key: "ponum", label: "ponum", render: (r) => <span className="font-medium text-foreground">{r.ponum}</span> },
   { key: "supcode", label: "supcode", render: (r) => <span className="text-muted-foreground">{r.supcode}</span> },
@@ -63,6 +69,7 @@ const dueColumns: FinanceRecordColumn<DuePayableRow>[] = [
 ]
 
 export default function AccountsPayablePage() {
+  const queryClient = useQueryClient()
   const [supplierFilter, setSupplierFilter] = useState("")
 
   const [poNum, setPoNum] = useState("")
@@ -81,11 +88,13 @@ export default function AccountsPayablePage() {
   const [glAmount, setGlAmount] = useState("")
   const [glDrCr, setGlDrCr] = useState<"DR" | "CR">("DR")
 
-  const { data: duePayables = [], isLoading, refetch } = useQuery({
-    queryKey: ["campus_erp.api.finance.get_due_purchase_order_payables", supplierFilter],
+  const duePayablesKey = ["campus_erp.api.finance_purchasing.get_due_purchase_order_payables", supplierFilter]
+
+  const { data: duePayables = [], isLoading } = useQuery({
+    queryKey: duePayablesKey,
     queryFn: () =>
       frappe.callGet<DuePayableRow[]>(
-        "campus_erp.api.finance.get_due_purchase_order_payables",
+        "campus_erp.api.finance_purchasing.get_due_purchase_order_payables",
         supplierFilter ? { supplier: supplierFilter } : {}
       ),
   })
@@ -123,6 +132,20 @@ export default function AccountsPayablePage() {
     setAmount(String(row.poamount))
   }
 
+  function resetForm() {
+    setPoNum("")
+    setDatePoPosted("")
+    setTerms("")
+    setSiNumber("")
+    setPayTo("")
+    setTaxPercent("0")
+    setAmount("0")
+    setCheckNumber("")
+    setCheckDate(today())
+    setNotes("")
+    setGlRows([])
+  }
+
   function addGlRow() {
     if (!glAccount || !glAmount) return
     const acct = accounts.find((a) => a.name === glAccount)
@@ -146,41 +169,33 @@ export default function AccountsPayablePage() {
     setGlRows(glRows.filter((_, i) => i !== index))
   }
 
-  async function handleSave() {
-    const payload = {
-      po_num: poNum,
-      terms,
-      si_number: siNumber,
-      pay_to: payTo,
-      tax_percent: Number(taxPercent),
-      amount: Number(amount),
-      check_number: checkNumber,
-      check_date: checkDate,
-      notes,
-      accounts: glRows.map((r) => ({ account: r.account, debit: r.debit, credit: r.credit })),
-    }
-    try {
-      await frappe.createDoc("SMS Due Purchase Order Payable", payload)
-      refetch()
-    } catch (err) {
-      console.error(err)
-      // TODO: surface via toast (sonner is already in the component set)
-    }
-  }
-
-  function handleDelete() {
-    if (!poNum) return
-    // TODO: wire to frappe.deleteDoc("SMS Due Purchase Order Payable", <name>)
-    console.log("delete", poNum)
-  }
+  const settleMutation = useMutation({
+    mutationFn: () =>
+      frappe.call<{ journal_entry: string }>(
+        "campus_erp.api.finance_purchasing.settle_purchase_order_payable",
+        {
+          purchase_order: poNum,
+          si_number: siNumber || undefined,
+          check_number: checkNumber || undefined,
+          check_date: checkDate || undefined,
+          accounts: glRows.map((r) => ({ account: r.account, debit: r.debit, credit: r.credit })),
+        }
+      ),
+    onSuccess: (result) => {
+      toast.success(`Payable settled — Journal Entry ${result.journal_entry}`)
+      queryClient.invalidateQueries({ queryKey: duePayablesKey })
+      resetForm()
+    },
+    onError: (error) => toast.error(getErrorMessage(error)),
+  })
 
   function handlePrint() {
     window.print()
   }
 
   const toolbarActions: FinanceToolbarAction[] = [
-    { key: "save", icon: Save, label: "Save", onClick: handleSave, disabled: !canSave },
-    { key: "delete", icon: Trash2, label: "Delete", onClick: handleDelete },
+    { key: "save", icon: Save, label: "Save", onClick: () => settleMutation.mutate(), disabled: !canSave || settleMutation.isPending },
+    { key: "cancel", icon: RotateCcw, label: "Cancel", onClick: resetForm },
     { key: "print", icon: Printer, label: "Print", onClick: handlePrint },
     { key: "find", icon: Search, label: "Find", onClick: () => document.getElementById("ap-po-search")?.focus() },
   ]
@@ -194,6 +209,8 @@ export default function AccountsPayablePage() {
           receipt can never be cancelled.
         </p>
       </div>
+      <FinanceVoucherToolbar actions={toolbarActions} onExit={() => history.back()} />
+
       <FinancePropertySection
         title="Due Purchase Order Payables"
         right={
@@ -217,8 +234,6 @@ export default function AccountsPayablePage() {
         />
       </FinancePropertySection>
 
-      <FinanceVoucherToolbar actions={toolbarActions} onExit={() => history.back()} />
-
       <FinancePropertySection title="Voucher Details">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
           <label className="grid gap-1 text-xs font-medium text-muted-foreground">
@@ -233,11 +248,13 @@ export default function AccountsPayablePage() {
             Terms
             <select className={`rounded border border-border ${financeRowSelect}`} value={terms} onChange={(e) => setTerms(e.target.value)}>
               <option value="">—</option>
-              <option value="Cash">Cash</option>
-              <option value="Net 15">Net 15</option>
-              <option value="Net 30">Net 30</option>
-              <option value="Net 60">Net 60</option>
-              <option value="COD">COD</option>
+              {/* The selected PO's own terms (tc_name) rarely matches one of the
+                  standard codes below — keep it selectable instead of silently
+                  falling back to "—" when it doesn't. */}
+              {terms && !STANDARD_TERMS.includes(terms) && <option value={terms}>{terms}</option>}
+              {STANDARD_TERMS.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
             </select>
           </label>
           <label className="grid gap-1 text-xs font-medium text-muted-foreground">
@@ -286,7 +303,7 @@ export default function AccountsPayablePage() {
           ) : undefined
         }
       >
-        <div className="grid grid-cols-[100px_1fr_90px_90px_20px] border-b border-border pb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+        <div className="grid grid-cols-[100px_1fr_90px_90px_20px] border-b border-border pb-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
           <span>Acct #</span>
           <span>Acct Name</span>
           <span className="text-right">Debit</span>
@@ -294,12 +311,12 @@ export default function AccountsPayablePage() {
           <span />
         </div>
         {glRows.map((row, i) => (
-          <div key={i} className="grid grid-cols-[100px_1fr_90px_90px_20px] items-center border-b border-border py-1.5 text-[13px] last:border-b-0">
+          <div key={i} className="grid grid-cols-[100px_1fr_90px_90px_20px] items-center border-b border-border py-1.5 text-sm last:border-b-0">
             <span>{row.account_number}</span>
             <span>{row.account_name}</span>
             <span className="text-right font-mono">{row.debit > 0 ? row.debit.toFixed(2) : "—"}</span>
             <span className="text-right font-mono">{row.credit > 0 ? row.credit.toFixed(2) : "—"}</span>
-            <button type="button" onClick={() => removeGlRow(i)} className="text-center text-xs text-muted-foreground hover:text-red-600">✕</button>
+            <button type="button" onClick={() => removeGlRow(i)} className="text-center text-xs text-muted-foreground hover:text-destructive">✕</button>
           </div>
         ))}
 
@@ -312,8 +329,8 @@ export default function AccountsPayablePage() {
           </select>
           <input className={`w-20 shrink-0 rounded border border-border ${financeRowInput}`} type="number" value={glAmount} onChange={(e) => setGlAmount(e.target.value)} placeholder="0.00" />
           <div className="flex shrink-0 overflow-hidden rounded border border-border">
-            <button type="button" onClick={() => setGlDrCr("DR")} className={`px-2.5 py-1.5 text-[11px] ${glDrCr === "DR" ? "bg-amber-700 text-white" : "text-muted-foreground"}`}>DR</button>
-            <button type="button" onClick={() => setGlDrCr("CR")} className={`border-l border-border px-2.5 py-1.5 text-[11px] ${glDrCr === "CR" ? "bg-amber-700 text-white" : "text-muted-foreground"}`}>CR</button>
+            <button type="button" onClick={() => setGlDrCr("DR")} className={`px-2.5 py-1.5 text-xs ${glDrCr === "DR" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>DR</button>
+            <button type="button" onClick={() => setGlDrCr("CR")} className={`border-l border-border px-2.5 py-1.5 text-xs ${glDrCr === "CR" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>CR</button>
           </div>
           <button type="button" className="shrink-0 rounded-md bg-primary px-3.5 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90" onClick={addGlRow}>Add</button>
         </div>
@@ -325,7 +342,7 @@ export default function AccountsPayablePage() {
       </FinancePropertySection>
 
       {glRows.length > 0 && !isBalanced && (
-        <p className="text-right text-xs text-amber-700">Debits and credits must match before saving.</p>
+        <p className="text-right text-xs text-destructive">Debits and credits must match before saving.</p>
       )}
     </div>
   )

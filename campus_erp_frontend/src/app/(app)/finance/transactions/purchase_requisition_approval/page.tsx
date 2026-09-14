@@ -1,84 +1,77 @@
 "use client"
 
 import { useState } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { toast } from "sonner"
 
-import { frappe } from "@/lib/frappe"
+import { frappe, getErrorMessage } from "@/lib/frappe"
 import { financeRowInput, financeRowSelect, financePrimaryButton } from "@/lib/finance-ui"
 import { FinancePropertySection } from "@/components/finance/FinancePropertyPanel"
 import { FinanceRecordTable, type FinanceRecordColumn } from "@/components/sms/FinanceRecordTable"
 
 type ApprovalStatus = "Pending" | "Approved" | "Denied"
 
-interface PurchaseRequisitionRow {
+interface MaterialRequestRow {
   name: string
-  pr_date: string
-  date_needed: string
+  transaction_date: string
+  schedule_date: string
   total_amount: number
-  prepared_by: string
-  purpose: string
+  requested_by: string
+  pr_purpose: string
 }
 
-const requisitionColumns: FinanceRecordColumn<PurchaseRequisitionRow>[] = [
+const requisitionColumns: FinanceRecordColumn<MaterialRequestRow>[] = [
   { key: "name", label: "Requisition", render: (r) => <span className="font-medium text-foreground">{r.name}</span> },
-  { key: "date_needed", label: "Date Needed", render: (r) => <span className="text-muted-foreground">{r.date_needed}</span> },
-  { key: "total_amount", label: "Total", align: "right", render: (r) => `₱${Number(r.total_amount).toFixed(2)}` },
-  { key: "prepared_by", label: "Requested By", render: (r) => <span className="text-muted-foreground">{r.prepared_by}</span> },
+  { key: "schedule_date", label: "Required By", render: (r) => <span className="text-muted-foreground">{r.schedule_date}</span> },
+  { key: "total_amount", label: "Total", align: "right", render: (r) => `₱${Number(r.total_amount ?? 0).toFixed(2)}` },
+  { key: "requested_by", label: "Requested By", render: (r) => <span className="text-muted-foreground">{r.requested_by}</span> },
 ]
 
 export default function PurchaseRequisitionApprovalPage() {
-  const [searchAll, setSearchAll] = useState(true)
-  const [dateFrom, setDateFrom] = useState("")
-  const [dateTo, setDateTo] = useState("")
-  const [selected, setSelected] = useState<PurchaseRequisitionRow | null>(null)
+  const queryClient = useQueryClient()
+  const [selected, setSelected] = useState<MaterialRequestRow | null>(null)
   const [recommendingApproval, setRecommendingApproval] = useState("")
   const [approvalStatus, setApprovalStatus] = useState<ApprovalStatus>("Pending")
   const [approvalRemarks, setApprovalRemarks] = useState("")
 
-  // NOTE: filtering on pr_date only — "SMS Purchase Requisition" has no
-  // approval_status field of its own (that lives on the separate
-  // "SMS Purchase Requisition Approval" doctype), so this currently lists
-  // ALL requisitions in range, not just pending ones. Confirm whether
-  // there's a status field to filter on before shipping.
   const { data: requisitions = [], isLoading } = useQuery({
-    queryKey: ["SMS Purchase Requisition", "list", searchAll, dateFrom, dateTo],
+    queryKey: ["Material Request", "list", "pending-approval"],
     queryFn: () =>
-      frappe.list<PurchaseRequisitionRow>("SMS Purchase Requisition", {
-        fields: ["name", "pr_date", "date_needed", "total_amount", "prepared_by", "purpose"],
-        filters: searchAll
-          ? undefined
-          : {
-              ...(dateFrom ? { pr_date: [">=", dateFrom] } : {}),
-              ...(dateTo ? { pr_date: ["<=", dateTo] } : {}),
-            },
+      frappe.list<MaterialRequestRow>("Material Request", {
+        fields: ["name", "transaction_date", "schedule_date", "total_amount", "requested_by", "pr_purpose"],
+        filters: {
+          material_request_type: "Purchase",
+          approval_status: "Pending",
+          docstatus: 0,
+        },
         limit_page_length: 100,
       }),
   })
 
   const canSave = selected !== null
 
-  function handleSelect(req: PurchaseRequisitionRow) {
+  function handleSelect(req: MaterialRequestRow) {
     setSelected(req)
     setRecommendingApproval("")
     setApprovalStatus("Pending")
     setApprovalRemarks("")
   }
 
-  function handleSave() {
-    if (!selected) return
-    const payload = {
-      purchase_requisition: selected.name,
-      date_needed: selected.date_needed,
-      total_amount: selected.total_amount,
-      requested_by: selected.prepared_by,
-      purpose: selected.purpose,
-      recommending_approval: recommendingApproval,
-      approval_status: approvalStatus,
-      approval_remarks: approvalRemarks,
-    }
-    // TODO: wire up to the real approve/deny persistence call
-    console.log(payload)
-  }
+  const approveMutation = useMutation({
+    mutationFn: () =>
+      frappe.call("campus_erp.api.finance_purchasing.approve_purchase_requisition", {
+        material_request: selected?.name,
+        approval_status: approvalStatus,
+        recommending_approval: recommendingApproval || undefined,
+        approval_remarks: approvalRemarks || undefined,
+      }),
+    onSuccess: () => {
+      toast.success(`Requisition ${approvalStatus.toLowerCase()}`)
+      queryClient.invalidateQueries({ queryKey: ["Material Request"] })
+      setSelected(null)
+    },
+    onError: (error) => toast.error(getErrorMessage(error)),
+  })
 
   return (
     <div className="grid max-w-3xl gap-6">
@@ -87,41 +80,7 @@ export default function PurchaseRequisitionApprovalPage() {
         <p className="mt-1 text-sm text-muted-foreground">Review and approve submitted purchase requisitions.</p>
       </div>
 
-      <FinancePropertySection title="Search & Filter">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-            <input
-              type="checkbox"
-              checked={searchAll}
-              onChange={(e) => setSearchAll(e.target.checked)}
-              className="h-4 w-4 rounded border-border"
-            />
-            Search all
-          </label>
-          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
-            From
-            <input
-              className={`rounded border border-border ${financeRowInput}`}
-              type="date"
-              value={dateFrom}
-              disabled={searchAll}
-              onChange={(e) => setDateFrom(e.target.value)}
-            />
-          </label>
-          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
-            To
-            <input
-              className={`rounded border border-border ${financeRowInput}`}
-              type="date"
-              value={dateTo}
-              disabled={searchAll}
-              onChange={(e) => setDateTo(e.target.value)}
-            />
-          </label>
-        </div>
-      </FinancePropertySection>
-
-      <FinancePropertySection title="Matching Requisitions">
+      <FinancePropertySection title="Pending Requisitions">
         <FinanceRecordTable
           columns={requisitionColumns}
           rows={requisitions}
@@ -129,7 +88,7 @@ export default function PurchaseRequisitionApprovalPage() {
           selectedRowKey={selected?.name}
           onSelectRow={handleSelect}
           isLoading={isLoading}
-          emptyMessage="No requisitions match this date range."
+          emptyMessage="No requisitions are pending approval."
         />
       </FinancePropertySection>
 
@@ -145,11 +104,11 @@ export default function PurchaseRequisitionApprovalPage() {
             />
           </label>
           <label className="grid gap-1 text-xs font-medium text-muted-foreground">
-            Date Needed
+            Required By
             <input
               className={`rounded border border-border bg-muted text-muted-foreground ${financeRowInput}`}
               type="text"
-              value={selected?.date_needed ?? "—"}
+              value={selected?.schedule_date ?? "—"}
               readOnly
             />
           </label>
@@ -158,7 +117,7 @@ export default function PurchaseRequisitionApprovalPage() {
             <input
               className={`rounded border border-border bg-muted text-right text-muted-foreground ${financeRowInput}`}
               type="text"
-              value={selected ? `₱${Number(selected.total_amount).toFixed(2)}` : "—"}
+              value={selected ? `₱${Number(selected.total_amount ?? 0).toFixed(2)}` : "—"}
               readOnly
             />
           </label>
@@ -167,7 +126,7 @@ export default function PurchaseRequisitionApprovalPage() {
             <input
               className={`rounded border border-border bg-muted text-muted-foreground ${financeRowInput}`}
               type="text"
-              value={selected?.prepared_by ?? "—"}
+              value={selected?.requested_by ?? "—"}
               readOnly
             />
           </label>
@@ -175,7 +134,7 @@ export default function PurchaseRequisitionApprovalPage() {
             Purpose
             <textarea
               className={`min-h-[56px] rounded border border-border bg-muted text-muted-foreground ${financeRowInput}`}
-              value={selected?.purpose ?? "—"}
+              value={selected?.pr_purpose ?? "—"}
               readOnly
             />
           </label>
@@ -196,15 +155,6 @@ export default function PurchaseRequisitionApprovalPage() {
             />
           </label>
           <label className="grid gap-1 text-xs font-medium text-muted-foreground">
-            Approved By
-            <input
-              className={`rounded border border-border bg-muted text-muted-foreground ${financeRowInput}`}
-              type="text"
-              value="Assigned on approval"
-              readOnly
-            />
-          </label>
-          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
             Approval Status
             <select
               className={`rounded border border-border ${financeRowSelect}`}
@@ -216,15 +166,6 @@ export default function PurchaseRequisitionApprovalPage() {
               <option value="Approved">Approved</option>
               <option value="Denied">Denied</option>
             </select>
-          </label>
-          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
-            Approval Date
-            <input
-              className={`rounded border border-border bg-muted text-muted-foreground ${financeRowInput}`}
-              type="text"
-              value="Assigned on approval"
-              readOnly
-            />
           </label>
           <label className="grid gap-1 text-xs font-medium text-muted-foreground sm:col-span-2">
             Approval Remarks
@@ -239,8 +180,13 @@ export default function PurchaseRequisitionApprovalPage() {
       </FinancePropertySection>
 
       <div className="flex items-center justify-end gap-3">
-        <button type="button" className={financePrimaryButton} onClick={handleSave} disabled={!canSave}>
-          Save Approval
+        <button
+          type="button"
+          className={financePrimaryButton}
+          onClick={() => approveMutation.mutate()}
+          disabled={!canSave || approvalStatus === "Pending" || approveMutation.isPending}
+        >
+          {approveMutation.isPending ? "Saving…" : "Save Approval"}
         </button>
       </div>
     </div>

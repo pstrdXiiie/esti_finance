@@ -89,7 +89,26 @@ export const assessmentSpec: EntrySpec = {
   title: "Student Assessment",
   submittable: true,
   fields: [
-    { fieldname: "student", label: "Student", fieldtype: "Link", options: "Student", required: true, inListView: true },
+    {
+      fieldname: "student",
+      label: "Student",
+      fieldtype: "Link",
+      options: "Student",
+      required: true,
+      inListView: true,
+      searchable: true,
+      searchFields: ["name", "student_name"],
+      linkLabelFields: ["student_name"],
+      autofill: {
+        fields: { student_name: "student_name", branch: "branch" },
+        relatedRecord: {
+          doctype: "Program Enrollment",
+          linkField: "student",
+          orderBy: "enrollment_date",
+          fields: { program: "program", academic_year: "school_year" },
+        },
+      },
+    },
     { fieldname: "student_name", label: "Student Name", fieldtype: "Data", readOnly: true, inListView: true },
     {
       fieldname: "program_enrollment",
@@ -411,177 +430,6 @@ export const sundryaccSearch: FormSpec = {
       label: "Filter Date",
       fieldtype: "Date",
       section: "Search & Filters",
-    },
-  ],
-};
-
-
-export const cashReceipt: FormSpec = {
-  doctype: "SMS Payment and Cash Receipt Entry",
-  title: "Cash Receipt Transaction",
-
-  fields: [
-    // Payment Type
-    {
-      fieldname: "payment_type",
-      label: "Payment Type",
-      fieldtype: "Select",
-      options:
-        "Student Payment (From Assessment)\nStudent Payment (Other than Assessment)",
-      required: true,
-      section: "Payment Type",
-    },
-
-    {
-      fieldname: "semester",
-      label: "Semester",
-      fieldtype: "Select",
-      options: "1st Semester\n2nd Semester\n3rd Semester\nSummer",
-      required: true,
-      section: "Payment Type",
-    },
-
-    {
-      fieldname: "school_year",
-      label: "School Year",
-      fieldtype: "Data",
-      required: true,
-      section: "Payment Type",
-    },
-
-    // Student Information
-    {
-      fieldname: "student_number",
-      label: "Student No.",
-      fieldtype: "Link",
-      options: "Student",
-      required: true,
-      section: "Student Information",
-      inListView: true,
-    },
-
-    {
-      fieldname: "payee",
-      label: "Payee",
-      fieldtype: "Data",
-      readOnly: true,
-      section: "Student Information",
-    },
-
-    {
-      fieldname: "course",
-      label: "Course",
-      fieldtype: "Data",
-      readOnly: true,
-      section: "Student Information",
-    },
-
-    // Assessment
-    {
-      fieldname: "assessment_fees",
-      label: "Assessment of Fees",
-      fieldtype: "Currency",
-      readOnly: true,
-      section: "Assessment & Balance",
-      dependsOn: 'eval:doc.payment_type=="Student Payment (From Assessment)"',
-    },
-
-    {
-      fieldname: "assessment",
-      label: "Assessment",
-      fieldtype: "Currency",
-      readOnly: true,
-      section: "Assessment & Balance",
-      dependsOn: 'eval:doc.payment_type=="Student Payment (From Assessment)"',
-    },
-
-    {
-      fieldname: "payment_due",
-      label: "Payment Due",
-      fieldtype: "Currency",
-      readOnly: true,
-      section: "Assessment & Balance",
-      dependsOn: 'eval:doc.payment_type=="Student Payment (From Assessment)"',
-    },
-
-    {
-      fieldname: "balance",
-      label: "Balance",
-      fieldtype: "Currency",
-      readOnly: true,
-      section: "Assessment & Balance",
-      dependsOn: 'eval:doc.payment_type=="Student Payment (From Assessment)"',
-    },
-
-    {
-      fieldname: "total_payments",
-      label: "Total Payments",
-      fieldtype: "Currency",
-      readOnly: true,
-      section: "Assessment & Balance",
-      dependsOn: 'eval:doc.payment_type=="Student Payment (From Assessment)"',
-    },
-
-    {
-      fieldname: "payment_period",
-      label: "Payment Period",
-      fieldtype: "Select",
-      options: "Prelim\nMidterm\nFinal",
-      section: "Assessment & Balance",
-      dependsOn: 'eval:doc.payment_type=="Student Payment (From Assessment)"',
-    },
-
-    // Receipt
-    {
-      fieldname: "or_number",
-      label: "OR Number",
-      fieldtype: "Data",
-      required: true,
-      section: "Receipt Details",
-      inListView: true,
-    },
-
-    {
-      fieldname: "date",
-      label: "Date",
-      fieldtype: "Date",
-      required: true,
-      section: "Receipt Details",
-    },
-
-    {
-      fieldname: "amount",
-      label: "Amount",
-      fieldtype: "Currency",
-      required: true,
-      section: "Receipt Details",
-    },
-
-    {
-      fieldname: "account_charged",
-      label: "Account Charged",
-      fieldtype: "Link",
-      options: "Account",
-      required: true,
-      section: "Receipt Details",
-    },
-
-    // Payment
-    {
-      fieldname: "mode_of_payment",
-      label: "Mode of Payment",
-      fieldtype: "Select",
-      options: "Cash\nCheck",
-      required: true,
-      section: "Payment Details",
-    },
-
-    {
-      fieldname: "check_number",
-      label: "Check Number",
-      fieldtype: "Data",
-      section: "Payment Details",
-      dependsOn: 'eval:doc.mode_of_payment=="Check"',
     },
   ],
 };

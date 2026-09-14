@@ -84,7 +84,7 @@ export function PettyCashVoucherItemGrid({
       title="Petty Cash Voucher Items"
       right={
         rows.length > 0 ? (
-          <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-700">
+          <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-foreground">
             Total ₱{total.toFixed(2)}
           </span>
         ) : undefined
@@ -95,19 +95,19 @@ export function PettyCashVoucherItemGrid({
         return (
           <div
             key={i}
-            className="grid grid-cols-[1fr_1fr_90px_20px] items-center gap-2 border-b border-zinc-100 py-1.5 text-[13px] last:border-b-0"
+            className="grid grid-cols-[1fr_1fr_90px_20px] items-center gap-2 border-b border-border py-1.5 text-sm last:border-b-0"
           >
             <span>
               {String(row.account ?? "")} · {String(row.account_name ?? "")}
             </span>
-            <span className="text-zinc-500">
+            <span className="text-muted-foreground">
               {emp ? `${emp.name} · ${emp.employee_name}` : String(row.employee_no ?? "—")}
             </span>
             <span className="text-right font-mono">{Number(row.amount ?? 0).toFixed(2)}</span>
             <button
               type="button"
               onClick={() => removeRow(i)}
-              className="text-center text-xs text-zinc-400 hover:text-red-600"
+              className="text-center text-xs text-muted-foreground hover:text-destructive"
             >
               ✕
             </button>
@@ -117,7 +117,7 @@ export function PettyCashVoucherItemGrid({
 
       <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
         <select
-          className={`min-w-[160px] flex-1 rounded border border-zinc-200 ${financeRowSelect}`}
+          className={`min-w-[160px] flex-1 rounded border border-border ${financeRowSelect}`}
           value={account}
           onChange={(e) => setAccount(e.target.value)}
         >
@@ -129,7 +129,7 @@ export function PettyCashVoucherItemGrid({
           ))}
         </select>
         <select
-          className={`min-w-[160px] flex-1 rounded border border-zinc-200 ${financeRowSelect}`}
+          className={`min-w-[160px] flex-1 rounded border border-border ${financeRowSelect}`}
           value={employeeNo}
           onChange={(e) => setEmployeeNo(e.target.value)}
         >
@@ -141,7 +141,7 @@ export function PettyCashVoucherItemGrid({
           ))}
         </select>
         <input
-          className={`w-24 shrink-0 rounded border border-zinc-200 ${financeRowInput}`}
+          className={`w-24 shrink-0 rounded border border-border ${financeRowInput}`}
           type="number"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}

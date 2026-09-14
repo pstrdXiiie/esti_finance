@@ -117,7 +117,7 @@ export function VoucherEntryForm({
   }
 
   return (
-    <div className="grid max-w-3xl gap-6">
+    <div className="grid max-w-3xl gap-3">
       <div>
         <h1 className="text-2xl font-semibold text-foreground">{title}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{description}</p>
@@ -201,10 +201,10 @@ export function VoucherEntryForm({
 
       <div className="flex items-center justify-end gap-3">
         {accounts.length > 0 && !isBalanced && (
-          <span className="text-xs text-amber-700">Debits and credits must match before saving.</span>
+          <span className="text-xs text-destructive">Debits and credits must match before saving.</span>
         )}
         {manualMode && !manualNumberValid && (
-          <span className="text-xs text-amber-700">Enter a voucher number.</span>
+          <span className="text-xs text-destructive">Enter a voucher number.</span>
         )}
         <button
           type="button"

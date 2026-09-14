@@ -173,7 +173,6 @@ export function DetailScreen({
               <Button
                 type="submit"
                 form="detail-form"
-                className="bg-slate-900 text-white hover:bg-emerald-500"
                 disabled={isSaving}
               >
                 {isSaving ? "Saving…" : isNew ? "Create" : "Save"}
@@ -193,7 +192,7 @@ export function DetailScreen({
               >
                 Delete
               </Button>
-              <Button className="bg-slate-800" onClick={() => setIsEditing(true)}>
+              <Button onClick={() => setIsEditing(true)}>
                 Edit
               </Button>
             </>

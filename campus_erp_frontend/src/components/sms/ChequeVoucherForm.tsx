@@ -108,7 +108,7 @@ export function ChequeVoucherForm({ name, basePath }: { name?: string; basePath?
 
   return (
     <form
-      className="grid max-w-3xl gap-6"
+      className="grid max-w-3xl gap-3"
       onSubmit={handleSubmit((values) => saveMutation.mutate(values))}
     >
       <div className="flex items-start justify-between">
@@ -207,7 +207,7 @@ export function ChequeVoucherForm({ name, basePath }: { name?: string; basePath?
 
       <div className="flex items-center justify-end gap-3">
         {rows.length > 0 && !isBalanced && (
-          <span className="text-xs text-amber-700">Debits and credits must match before saving.</span>
+          <span className="text-xs text-destructive">Debits and credits must match before saving.</span>
         )}
         <button
           type="submit"

@@ -37,7 +37,7 @@ export function RecordViewDialog<T>({
                     <div className="grid grid-cols-2 gap-x-4 gap-y-3 py-2 text-sm">
                         {fields.map((f) => (
                             <div key={f.label} className="space-y-0.5">
-                                <p className="text-xs font-medium text-gray-500">{f.label}</p>
+                                <p className="text-xs font-medium text-muted-foreground">{f.label}</p>
                                 <p>{f.render(row)}</p>
                             </div>
                         ))}

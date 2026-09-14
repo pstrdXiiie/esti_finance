@@ -33,10 +33,10 @@ export function PurchaseOrderReceivingItemGrid({
   return (
     <FinancePropertySection title="Receiving Orders">
       {rows.length === 0 && (
-        <p className="py-4 text-center text-sm text-zinc-500">Select a PO above to load its items.</p>
+        <p className="py-4 text-center text-sm text-muted-foreground">Select a PO above to load its items.</p>
       )}
       {rows.length > 0 && (
-        <div className="grid grid-cols-[1fr_1fr_80px_80px_100px] gap-2 border-b border-zinc-200 pb-1.5 text-[11px] font-medium uppercase tracking-wide text-zinc-400">
+        <div className="grid grid-cols-[1fr_1fr_80px_80px_100px] gap-2 border-b border-border pb-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
           <span>Item</span>
           <span>Description</span>
           <span className="text-right">Ordered</span>
@@ -47,14 +47,14 @@ export function PurchaseOrderReceivingItemGrid({
       {rows.map((row, i) => (
         <div
           key={row.item_code}
-          className="grid grid-cols-[1fr_1fr_80px_80px_100px] items-center gap-2 border-b border-zinc-100 py-1.5 text-[13px] last:border-b-0"
+          className="grid grid-cols-[1fr_1fr_80px_80px_100px] items-center gap-2 border-b border-border py-1.5 text-sm last:border-b-0"
         >
-          <span className="font-medium text-zinc-900">{row.item_code}</span>
-          <span className="text-zinc-500">{row.item_description || "—"}</span>
+          <span className="font-medium text-foreground">{row.item_code}</span>
+          <span className="text-muted-foreground">{row.item_description || "—"}</span>
           <span className="text-right font-mono">{row.qty_ordered}</span>
-          <span className="text-right font-mono text-zinc-500">{row.qty_previously_received}</span>
+          <span className="text-right font-mono text-muted-foreground">{row.qty_previously_received}</span>
           <input
-            className={`w-full rounded border border-zinc-200 text-right ${financeRowInput}`}
+            className={`w-full rounded border border-border text-right ${financeRowInput}`}
             type="number"
             min={0}
             max={row.qty_ordered - row.qty_previously_received}

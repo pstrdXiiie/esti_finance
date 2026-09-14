@@ -33,9 +33,9 @@ export function FinanceRecordTable<T>({
 }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-[13px]">
+      <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-zinc-200 text-left text-zinc-500">
+          <tr className="border-b border-border text-left text-muted-foreground">
             {columns.map((col) => (
               <th
                 key={col.key}
@@ -49,14 +49,14 @@ export function FinanceRecordTable<T>({
         <tbody>
           {isLoading && (
             <tr>
-              <td colSpan={columns.length} className="py-4 text-center text-zinc-500">
+              <td colSpan={columns.length} className="py-4 text-center text-muted-foreground">
                 Loading…
               </td>
             </tr>
           )}
           {!isLoading && rows.length === 0 && (
             <tr>
-              <td colSpan={columns.length} className="py-4 text-center text-zinc-500">
+              <td colSpan={columns.length} className="py-4 text-center text-muted-foreground">
                 {emptyMessage}
               </td>
             </tr>
@@ -68,9 +68,9 @@ export function FinanceRecordTable<T>({
                 <tr
                   key={key}
                   onClick={() => onSelectRow?.(row)}
-                  className={`border-b border-zinc-100 last:border-b-0 ${
-                    onSelectRow ? "cursor-pointer hover:bg-zinc-50" : ""
-                  } ${selectedRowKey === key ? "bg-zinc-50" : ""}`}
+                  className={`border-b border-border last:border-b-0 ${
+                    onSelectRow ? "cursor-pointer hover:bg-muted/50" : ""
+                  } ${selectedRowKey === key ? "bg-muted/50" : ""}`}
                 >
                   {columns.map((col) => (
                     <td

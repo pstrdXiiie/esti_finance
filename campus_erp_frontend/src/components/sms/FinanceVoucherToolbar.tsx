@@ -27,7 +27,7 @@ export function FinanceVoucherToolbar({
   exitLabel?: string
 }) {
   return (
-    <div className="flex items-center justify-between rounded-lg border border-zinc-200 bg-white p-3">
+    <div className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
       <div className="flex gap-1">
         {actions.map((action) => (
           <button
@@ -35,7 +35,7 @@ export function FinanceVoucherToolbar({
             type="button"
             onClick={action.onClick}
             disabled={action.disabled}
-            className="flex flex-col items-center gap-1 rounded px-3 py-1.5 text-xs text-zinc-600 hover:bg-zinc-50 disabled:opacity-40"
+            className="flex flex-col items-center gap-1 rounded px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted/50 disabled:opacity-40"
           >
             <action.icon className="h-5 w-5" />
             {action.label}
@@ -46,7 +46,7 @@ export function FinanceVoucherToolbar({
         <button
           type="button"
           onClick={onExit}
-          className="flex flex-col items-center gap-1 rounded px-3 py-1.5 text-xs text-red-600 hover:bg-red-50"
+          className="flex flex-col items-center gap-1 rounded px-3 py-1.5 text-xs text-destructive hover:bg-destructive/10"
         >
           <XCircle className="h-5 w-5" />
           {exitLabel}

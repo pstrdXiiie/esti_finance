@@ -133,7 +133,12 @@ export function EntryScreen({
         >
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {spec.fields.map((f) => (
-              <DynamicField key={f.fieldname} control={form.control} spec={f} />
+              <DynamicField
+                key={f.fieldname}
+                control={form.control}
+                spec={f}
+                setValue={form.setValue as (name: string, value: unknown) => void}
+              />
             ))}
           </div>
 

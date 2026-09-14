@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query"
 import type { Control, FieldValues, Path } from "react-hook-form"
 import type { FieldSpec } from "@/lib/forms/types"
 import { frappe } from "@/lib/frappe"
+import { LinkSearchField } from "@/components/sms/LinkSearchField"
 import { Input } from "@/components/ui/input"
 import {
   Select,
@@ -39,6 +40,45 @@ function useLinkDropdownOptions(spec: FieldSpec) {
 }
 
 /**
+ * After a searchable Link field's value is picked (spec.autofill), copies
+ * matching data into other fields on the same form -- directly from the
+ * picked record, and/or from its newest related record (e.g. a Student's
+ * latest Program Enrollment). Best-effort: a failed related-record lookup
+ * just leaves those fields as-is rather than blocking the selection.
+ */
+async function applyAutofill(
+  spec: FieldSpec,
+  row: Record<string, unknown>,
+  setValue?: (name: string, value: unknown) => void
+) {
+  if (!spec.autofill || !setValue) return
+  if (spec.autofill.fields) {
+    for (const [srcField, destField] of Object.entries(spec.autofill.fields)) {
+      setValue(destField, row[srcField] ?? "")
+    }
+  }
+  if (spec.autofill.relatedRecord) {
+    const { doctype, linkField, orderBy, fields } = spec.autofill.relatedRecord
+    try {
+      const related = await frappe.list<Record<string, unknown>>(doctype, {
+        fields: ["name", ...Object.keys(fields)],
+        filters: [[linkField, "=", row.name as string]],
+        order_by: `${orderBy} desc`,
+        limit_page_length: 1,
+      })
+      const match = related[0]
+      if (match) {
+        for (const [srcField, destField] of Object.entries(fields)) {
+          setValue(destField, match[srcField] ?? "")
+        }
+      }
+    } catch {
+      // best-effort -- leave related fields untouched on failure
+    }
+  }
+}
+
+/**
  * Renders one form field from a FieldSpec (blueprint §5.1's data-driven
  * screen model: changing a field's type/label is a spec edit, not a
  * template-code change).
@@ -46,9 +86,12 @@ function useLinkDropdownOptions(spec: FieldSpec) {
 export function DynamicField<T extends FieldValues>({
   control,
   spec,
+  setValue,
 }: {
   control: Control<T>
   spec: FieldSpec
+  /** Loosely typed on purpose -- autofill destination fieldnames come from spec data, not this component's own T. */
+  setValue?: (name: string, value: unknown) => void
 }) {
   const linkDropdownQuery = useLinkDropdownOptions(spec)
 
@@ -83,6 +126,14 @@ export function DynamicField<T extends FieldValues>({
                     ))}
                 </SelectContent>
               </Select>
+            ) : spec.fieldtype === "Link" && spec.searchable ? (
+              <LinkSearchField
+                spec={spec}
+                value={(field.value as string | undefined) ?? ""}
+                disabled={spec.readOnly}
+                onChange={field.onChange}
+                onSelect={(row) => applyAutofill(spec, row, setValue)}
+              />
             ) : spec.fieldtype === "Link" && spec.dropdown ? (
               <Select
                 onValueChange={field.onChange}

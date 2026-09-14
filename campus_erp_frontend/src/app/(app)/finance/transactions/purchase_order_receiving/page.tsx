@@ -310,7 +310,7 @@ export default function PurchaseOrderReceivingPage() {
         </button>
         <button
           type="button"
-          className="rounded border border-border px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 disabled:opacity-40"
+          className="rounded border border-border px-3 py-1.5 text-sm text-destructive hover:bg-destructive/10 disabled:opacity-40"
           onClick={handleCancel}
           disabled={!canAct}
         >
@@ -334,10 +334,10 @@ export default function PurchaseOrderReceivingPage() {
       </div>
 
       {isPosted && (
-        <p className="text-xs text-amber-700">This PO has already been posted to GL and can no longer be edited or cancelled.</p>
+        <p className="text-xs text-destructive">This PO has already been posted to GL and can no longer be edited or cancelled.</p>
       )}
       {isFullyReceived && !isPosted && (
-        <p className="text-xs text-emerald-700">All items on this PO have been fully received.</p>
+        <p className="text-xs text-primary">All items on this PO have been fully received.</p>
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

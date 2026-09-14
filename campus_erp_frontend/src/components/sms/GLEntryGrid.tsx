@@ -96,7 +96,7 @@ export function GLEntryGrid({
       {rows.map((row, i) => (
         <div
           key={i}
-          className="grid grid-cols-[1fr_90px_90px_20px] items-center border-b border-zinc-100 py-1.5 text-[13px] last:border-b-0"
+          className="grid grid-cols-[1fr_90px_90px_20px] items-center border-b border-border py-1.5 text-sm last:border-b-0"
         >
           <span>
             {String(row.account ?? "")} · {String(row.account_name ?? "")}
@@ -110,7 +110,7 @@ export function GLEntryGrid({
           <button
             type="button"
             onClick={() => removeRow(i)}
-            className="text-center text-xs text-zinc-400 hover:text-red-600"
+            className="text-center text-xs text-muted-foreground hover:text-destructive"
           >
             ✕
           </button>
@@ -119,7 +119,7 @@ export function GLEntryGrid({
 
       <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
         <select
-          className={`min-w-[160px] flex-1 rounded border border-zinc-200 ${financeRowSelect}`}
+          className={`min-w-[160px] flex-1 rounded border border-border ${financeRowSelect}`}
           value={account}
           onChange={(e) => setAccount(e.target.value)}
         >
@@ -131,24 +131,24 @@ export function GLEntryGrid({
           ))}
         </select>
         <input
-          className={`w-20 shrink-0 rounded border border-zinc-200 ${financeRowInput}`}
+          className={`w-20 shrink-0 rounded border border-border ${financeRowInput}`}
           type="number"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           placeholder="0.00"
         />
-        <div className="flex shrink-0 overflow-hidden rounded border border-zinc-200">
+        <div className="flex shrink-0 overflow-hidden rounded border border-border">
           <button
             type="button"
             onClick={() => setDrCr("DR")}
-            className={`shrink-0 whitespace-nowrap px-2.5 py-1.5 text-[11px] ${drCr === "DR" ? financeAccentToggleOn : financeAccentToggleOff}`}
+            className={`shrink-0 whitespace-nowrap px-2.5 py-1.5 text-xs ${drCr === "DR" ? financeAccentToggleOn : financeAccentToggleOff}`}
           >
             DR
           </button>
           <button
             type="button"
             onClick={() => setDrCr("CR")}
-            className={`shrink-0 whitespace-nowrap border-l border-zinc-200 px-2.5 py-1.5 text-[11px] ${drCr === "CR" ? financeAccentToggleOn : financeAccentToggleOff}`}
+            className={`shrink-0 whitespace-nowrap border-l border-border px-2.5 py-1.5 text-xs ${drCr === "CR" ? financeAccentToggleOn : financeAccentToggleOff}`}
           >
             CR
           </button>

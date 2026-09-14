@@ -3,5 +3,5 @@ import { FinanceEntryListScreen } from "@/components/finance/FinanceEntryListScr
 import { sundryacc } from "@/lib/forms/finance"
 
 export default function SundryAccountListPage() {
-  return <FinanceEntryListScreen spec={sundryacc} />
+  return <FinanceEntryListScreen spec={sundryacc} formDisplay="inline" />
 }

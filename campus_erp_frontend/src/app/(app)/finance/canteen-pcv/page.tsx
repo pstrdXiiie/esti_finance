@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { frappe, getErrorMessage } from "@/lib/frappe"
-import { EntryListScreen } from "@/components/sms/EntryListScreen"
+import { FinanceEntryListScreen } from "@/components/finance/FinanceEntryListScreen"
 import { canteenPcvSpec } from "@/lib/forms/purchasing"
 import { Button } from "@/components/ui/button"
 import {
@@ -40,7 +40,7 @@ interface CompanyRow {
 export default function CanteenPcvListPage() {
   return (
     <div className="grid gap-6">
-      <EntryListScreen spec={canteenPcvSpec} basePath="/finance/canteen-pcv" />
+      <FinanceEntryListScreen spec={canteenPcvSpec} formDisplay="inline" />
       <ReplenishmentPanel />
     </div>
   )

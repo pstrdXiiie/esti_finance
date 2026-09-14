@@ -58,12 +58,15 @@ export function FinanceEntryListScreen({
   spec,
   renderExtra,
   formDisplay = "dialog",
+  allowCreate = true,
 }: {
   spec: EntrySpec
   /** Extra content rendered below the form, only when editing an existing record. */
   renderExtra?: (name: string) => ReactNode
   /** "dialog" (default, unchanged popup behavior) or "inline" (form embedded above the table). */
   formDisplay?: "dialog" | "inline"
+  /** false hides "Add {title}" and disables creating new records — read/edit/delete only (e.g. Student Accounts). */
+  allowCreate?: boolean
 }) {
   const queryClient = useQueryClient()
   const [deleteTarget, setDeleteTarget] = useState<Record<string, unknown> | null>(null)
@@ -174,6 +177,7 @@ function formatCell(c: (typeof columns)[number], row: Record<string, unknown>): 
   })
 
   function openNew() {
+    if (!allowCreate) return
     setActiveName(undefined)
     setFormOpen(true)
   }
@@ -224,7 +228,7 @@ function formatCell(c: (typeof columns)[number], row: Record<string, unknown>): 
               </Button>
             </>
           )}
-          {!(inline && formOpen) && <Button onClick={openNew}>Add {spec.title}</Button>}
+          {allowCreate && !(inline && formOpen) && <Button onClick={openNew}>Add {spec.title}</Button>}
         </div>
       </div>
 
@@ -332,7 +336,7 @@ function formatCell(c: (typeof columns)[number], row: Record<string, unknown>): 
                 </thead>
                 <tbody>
                   {group.rows.map((row) => (
-                    <tr key={String(row.name)} className="border-b border-zinc-300">
+                    <tr key={String(row.name)} className="border-b border-border">
                       {columns.map((c) => (
                         <td key={c.fieldname} className="py-1 pr-4">
                          {formatCell(c, row)}
