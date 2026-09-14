@@ -5,5 +5,5 @@ import frappe
 from frappe.model.document import Document
 
 
-class SmsPersonnelHolidays(Document):
+class SMSPersonnelHolidays(Document):
 	pass

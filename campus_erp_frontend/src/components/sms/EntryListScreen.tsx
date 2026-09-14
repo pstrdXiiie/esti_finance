@@ -34,18 +34,27 @@ import { Plus, Search } from "lucide-react";
 export function EntryListScreen({
   spec,
   basePath,
+<<<<<<< HEAD
   inlineAdd = false,
   filters,
   cardStyle = false,
+=======
+  filters,
+>>>>>>> 4dd3f8d (Reconstruct Permit to Take Exam section and  fix holidays section mispelled characters in its doctype)
 }: {
   spec: EntrySpec
   basePath: string
+<<<<<<< HEAD
   /** When true, "Add" opens an inline panel above the table instead ofnavigating to a new route. */
   inlineAdd?: boolean
   /** Server-side filters applied to the list query, e.g. excluding cancelled records. */
   filters?: Array<[string, string, unknown]>
   /** Purely visual opt-in: rounded-2xl card shell + bordered toolbar matching Curriculum Offered. Default false leaves existing consumers unchanged. */
   cardStyle?: boolean
+=======
+  /** Optional server-side filters (e.g. excluding cancelled records) — forwarded as-is to frappe.list. */
+  filters?: Array<[string, string, unknown]>
+>>>>>>> 4dd3f8d (Reconstruct Permit to Take Exam section and  fix holidays section mispelled characters in its doctype)
 }) {
   const queryClient = useQueryClient()
   const [showAddPanel, setShowAddPanel] = useState(false)
