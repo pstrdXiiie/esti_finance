@@ -1,37 +1,12 @@
 "use client"
 
 import { Suspense } from "react"
-import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
 import finance_maintenance from "@/components/ui/finance/maintenance/maintenance";
 import finance_transactions from "@/components/ui/finance/transactions/transactions";
 import ChartOfAccountsListPage from "@/app/(app)/finance/chartsofaccounts/page"
 import FinancialReportPage from "@/app/(app)/finance/financialreport/page"
-
-const SCREENS = [
-  {
-    href: "/finance/assessments",
-    title: "Student Assessments",
-    description: "Review, edit, and submit student fee assessments before payments can be recorded against them.",
-  },
-  {
-    href: "/finance/discounts",
-    title: "Discounts",
-    description: "Tuition and misc-fee discount codes applied at assessment time.",
-  },
-  {
-    href: "/finance/wallets",
-    title: "Student Wallets",
-    description: "Look up a student's e-cash wallet balance and record top-ups or payments.",
-  },
-]
 
 export default function FinancePage() {
   return (
@@ -77,25 +52,6 @@ function FinancePageContent() {
           {finance_maintenance()}
         </TabsContent>
       </Tabs>
-
-      {/* <div className="print:hidden">
-        <h1 className="text-2xl font-semibold">Finance</h1>
-        <p className="text-muted-foreground">
-          Student assessments, discounts, wallets, and other finance shortcuts.
-        </p>
-      </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 print:hidden">
-        {SCREENS.map((s) => (
-          <Link key={s.href} href={s.href}>
-            <Card className="h-full transition-colors hover:bg-muted/40">
-              <CardHeader>
-                <CardTitle>{s.title}</CardTitle>
-                <CardDescription>{s.description}</CardDescription>
-              </CardHeader>
-            </Card>
-          </Link>
-        ))}
-      </div> */}
     </div>
   )
 }

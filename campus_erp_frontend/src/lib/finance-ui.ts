@@ -20,4 +20,8 @@ export function financeBalanceBadge(isBalanced: boolean) {
   return isBalanced
     ? "text-xs font-semibold text-primary"
     : "text-xs font-semibold text-destructive"
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> bd92b2d (updated finance maintenance)

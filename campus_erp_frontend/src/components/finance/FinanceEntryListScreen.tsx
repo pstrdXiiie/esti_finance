@@ -66,8 +66,11 @@ export function FinanceEntryListScreen({
   renderExtra,
   formDisplay = "dialog",
   allowCreate = true,
+<<<<<<< HEAD
   initialSearch,
   cardStyle = false,
+=======
+>>>>>>> bd92b2d (updated finance maintenance)
 }: {
   spec: EntrySpec
   /** Extra content rendered below the form, only when editing an existing record. */
@@ -76,10 +79,13 @@ export function FinanceEntryListScreen({
   formDisplay?: "dialog" | "inline"
   /** false hides "Add {title}" and disables creating new records — read/edit/delete only (e.g. Student Accounts). */
   allowCreate?: boolean
+<<<<<<< HEAD
   /** Seeds the search box, e.g. from a `?q=` link in from another module's quickLinks. */
   initialSearch?: string
   /** Purely visual opt-in: rounded-2xl card shell + bordered toolbar matching Curriculum Offered. Default false leaves existing consumers unchanged. */
   cardStyle?: boolean
+=======
+>>>>>>> bd92b2d (updated finance maintenance)
 }) {
   const queryClient = useQueryClient()
   const [deleteTarget, setDeleteTarget] = useState<Record<string, unknown> | null>(null)
@@ -264,12 +270,16 @@ export function FinanceEntryListScreen({
               </Button>
             </>
           )}
+<<<<<<< HEAD
           {allowCreate && !(inline && formOpen) && (
             <Button onClick={openNew}>
               {cardStyle && <Plus className="h-4 w-4" />}
               Add {spec.title}
             </Button>
           )}
+=======
+          {allowCreate && !(inline && formOpen) && <Button onClick={openNew}>Add {spec.title}</Button>}
+>>>>>>> bd92b2d (updated finance maintenance)
         </div>
       </div>
 

@@ -1,6 +1,10 @@
 "use client"
 
+<<<<<<< HEAD
 import { useState, type ReactNode } from "react"
+=======
+import { useState } from "react"
+>>>>>>> bd92b2d (updated finance maintenance)
 import { useForm } from "react-hook-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
@@ -54,6 +58,7 @@ type Mode = "view" | "edit" | "add"
  * pressed. Meant for FinanceMaintenancePage's sidebar-switched screens;
  * FinanceEntryListScreen (list+inline-form) stays the pattern for finance
  * screens reached directly from the main sidebar.
+<<<<<<< HEAD
  *
  * `extra` is an optional slot for doctype-specific actions that depend on
  * the currently selected record (e.g. Purchase Requisition's Submit /
@@ -67,6 +72,10 @@ export function FinanceMaintenanceScreen({
   spec: EntrySpec
   extra?: (doc: Record<string, unknown> | null, mode: Mode) => ReactNode
 }) {
+=======
+ */
+export function FinanceMaintenanceScreen({ spec }: { spec: EntrySpec }) {
+>>>>>>> bd92b2d (updated finance maintenance)
   const queryClient = useQueryClient()
 
   const listQuery = useQuery({
@@ -137,7 +146,11 @@ export function FinanceMaintenanceScreen({
     } else {
       form.reset({})
       setRows([])
+<<<<<<< HEAD
       setMode("view")
+=======
+      setMode(records.length > 0 ? "view" : "add")
+>>>>>>> bd92b2d (updated finance maintenance)
     }
   }
 
@@ -199,7 +212,11 @@ export function FinanceMaintenanceScreen({
         <Button type="button" onClick={handleAdd} disabled={mode === "add"}>
           <PlusIcon /> Add
         </Button>
+<<<<<<< HEAD
         <Button type="button" variant="outline" disabled={!selected || mode !=="view"} onClick={handleEdit}>
+=======
+        <Button type="button" variant="outline" disabled={!selected || mode !== "view"} onClick={handleEdit}>
+>>>>>>> bd92b2d (updated finance maintenance)
           <PencilIcon /> Edit
         </Button>
         <Button
@@ -255,12 +272,15 @@ export function FinanceMaintenanceScreen({
         </fieldset>
       )}
 
+<<<<<<< HEAD
       {extra && mode === "view" && (
         <div className="border-t border-border pt-4">
           {extra(fullDoc ?? null, mode)}
         </div>
       )}
 
+=======
+>>>>>>> bd92b2d (updated finance maintenance)
       <div className="flex items-center justify-between border-t border-border pt-4">
         <div className="text-sm text-muted-foreground">
           {selectedIndex !== null && records.length > 0
