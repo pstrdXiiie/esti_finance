@@ -1,6 +1,6 @@
 {
  "background_workers": 1,
- "default_site": "education.localhost",
+ "default_site": "estierp.local",
  "developer_mode": 1,
  "file_watcher_port": 6787,
  "frappe_user": "esti",

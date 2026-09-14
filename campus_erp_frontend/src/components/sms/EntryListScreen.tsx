@@ -27,20 +27,24 @@ import { Search } from "lucide-react";
 export function EntryListScreen({
   spec,
   basePath,
+  filters,
 }: {
   spec: EntrySpec
   /** Route this list lives under, e.g. "/registrar/curriculum". */
   basePath: string
+  /** Optional server-side filters (e.g. excluding cancelled records) — forwarded as-is to frappe.list. */
+  filters?: Array<[string, string, unknown]>
 }) {
   const [search, setSearch] = useState("")
   const listColumns = spec.fields.filter((f) => f.inListView)
   const columns = listColumns.length ? listColumns : spec.fields.slice(0, 4)
 
   const { data, isLoading } = useQuery({
-    queryKey: [spec.doctype, "list"],
+    queryKey: [spec.doctype, "list", filters],
     queryFn: () =>
       frappe.list(spec.doctype, {
         fields: ["name", ...spec.fields.map((f) => f.fieldname)],
+        filters,
         limit_page_length: 100,
       }),
   })
