@@ -2,6 +2,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import DepartmentMaintenance from "@/components/ui/personnel/DepartmentMaintenance"
 import { HolidaysTab as HolidaysMaintenance } from "@/components/ui/personnel/HolidaysMaintenance"
 import { LoanTypesList } from "@/components/ui/personnel/loans/LoanTypesList"
+import { PositionsList } from "@/components/ui/personnel/positions/PositionsList"
 
 export const personnel_maintenance = () => {
   return (
@@ -81,12 +82,7 @@ export const personnel_maintenance = () => {
 
       <TabsContent value="positions-designations" className="mt-0 min-w-0 flex-1">
         <div className="tabContent h-full! min-w-0 max-w-full overflow-y-auto rounded-md border-border">
-          <div className="rounded-2xl border border-border h-full p-7">
-            <p className="text-muted-foreground">
-              Positions / Designations — coming soon. ERPNext&apos;s Designation doctype exists
-              but carries a skills table + appraisal template link not needed here.
-            </p>
-          </div>
+          <PositionsList />
         </div>
       </TabsContent>
 

@@ -106,7 +106,7 @@ const INITIAL_STATE: EmployeeFormState = {
   employee_id: "", rfid: "", first_name: "", middle_name: "", last_name: "", title: "",
   birthdate: "", gender: "", number_of_dependents: "", marital_status: "", nationality: "",
   religion: "", contact_number: "", birthplace: "", mailing_address: "",
-  employee_status: "", date_hired: "", department: "",
+  employee_status: "", date_hired: "", department: "", position: "",
   // Primary Contacts
   emergency_contacts: "", family_dependents: "",
   // Skills / Seminars
@@ -163,6 +163,19 @@ export function EmployeeWizard({ mode, onDone }: EmployeeWizardProps) {
       frappe.list<{ name: string; department: string | null }>("SMS Personnel Departments", {
         fields: ["name", "department"],
         order_by: "department asc",
+        limit_page_length: 500,
+      }),
+  })
+
+  // position is a Link field (options: "SMS Personnel Position"). Fetch the
+  // live list the same way departments is fetched above, rather than
+  // hardcoding a static option string.
+  const { data: positions } = useQuery({
+    queryKey: ["SMS Personnel Position", "list", "employee-wizard"],
+    queryFn: () =>
+      frappe.list<{ name: string; position_name: string | null }>("SMS Personnel Position", {
+        fields: ["name", "position_name"],
+        order_by: "position_name asc",
         limit_page_length: 500,
       }),
   })
@@ -435,6 +448,16 @@ export function EmployeeWizard({ mode, onDone }: EmployeeWizardProps) {
                     <SelectContent>
                       {(departments ?? []).map((d) => (
                         <SelectItem key={d.name} value={d.name}>{d.department ?? d.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field id="emp-position" label="Position">
+                  <Select value={form.position} onValueChange={(v) => set("position", v ?? "")} disabled={readOnly}>
+                    <SelectTrigger id="emp-position" className="w-full"><SelectValue placeholder="Select…" /></SelectTrigger>
+                    <SelectContent>
+                      {(positions ?? []).map((p) => (
+                        <SelectItem key={p.name} value={p.name}>{p.position_name ?? p.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

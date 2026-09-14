@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Form } from "@/components/ui/form"
-import { DynamicField } from "@/components/sms/DynamicField"
 import {
   Table,
   TableBody,
@@ -34,15 +33,22 @@ import { Trash2Icon } from "lucide-react"
 
 type EmployeeDoc = Record<string, string>
 
+// Option lists mirrored from EmployeeWizard.tsx's Step 0 — kept identical
+// so Add and Edit never disagree about what a valid value looks like.
+const EMPLOYEE_STATUS_OPTIONS = ["Contractual", "Part Timer", "Probationary", "Regular"]
+const WORK_STATUS_OPTIONS = ["In Active", "Active", "Executive", "Consultant"]
+const GENDER_OPTIONS = ["Male", "Female", "Others"]
+const MARITAL_STATUS_OPTIONS = ["Single", "Married", "Divorced", "Widowed", "Separated"]
+const NATIONALITY_OPTIONS = ["Filipino", "American"]
+
 /**
  * Department is the one field of employeeSpec.fields rendered by hand
- * instead of via DynamicField: its options come from a live query against
- * "SMS Personnel Departments" (see the useQuery below), not a static
- * "\n"-joined options string the way every other Select field on this spec
- * works, so DynamicField's generic Select branch can't drive it. Wired to
- * the same react-hook-form `control` as everything else via useController
- * so it behaves like any other field in the form (tracked, submitted,
- * reset on reload) rather than living in parallel state.
+ * instead of via a plain Input/register: its options come from a live
+ * query against "SMS Personnel Departments" (see the useQuery below), not
+ * a static list. Wired to the same react-hook-form `control` as everything
+ * else via useController so it behaves like any other field in the form
+ * (tracked, submitted, reset on reload) rather than living in parallel
+ * state.
  */
 function DepartmentField({
   control,
@@ -64,22 +70,94 @@ function DepartmentField({
         </SelectTrigger>
         <SelectContent>
           {/*
-            Personnel Info.department stores the department's DISPLAY NAME
-            (e.g. "Human Resources"), not the SMS Personnel Departments
-            record's own docname (an auto-generated id) — match/key on
-            d.department, not d.name, or a saved value never matches any
-            option. Skip any department record missing its name.
+            Personnel Info.department is a Link field to SMS Personnel
+            Departments, so it must store that doctype's actual docname
+            (d.name), not the human-readable label — matching
+            EmployeeWizard.tsx's Select. Storing d.department here breaks
+            Link validation on save (backend rejects any value that isn't
+            a real docname) and also breaks re-selecting the current value
+            when editing an existing employee.
           */}
-          {departments
-            .filter((d): d is { name: string; department: string } => !!d.department)
-            .map((d) => (
-              <SelectItem key={d.name} value={d.department}>
-                {d.department}
-              </SelectItem>
-            ))}
+          {departments.map((d) => (
+            <SelectItem key={d.name} value={d.name}>
+              {d.department ?? d.name}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
     </div>
+  )
+}
+
+/**
+ * Position is the same shape as DepartmentField above: a Link field to
+ * "SMS Personnel Position", so its options come from a live query rather
+ * than a static list, and it must store the target doctype's docname
+ * (p.name), not the human-readable position_name — same Link-validation
+ * reasoning as DepartmentField's comment.
+ */
+function PositionField({
+  control,
+  label,
+  positions,
+}: {
+  control: Control<Record<string, unknown>>
+  label: string
+  positions: Array<{ name: string; position_name: string | null }>
+}) {
+  const { field } = useController({ control, name: "position", defaultValue: "" })
+
+  return (
+    <div className="grid gap-1.5">
+      <label htmlFor="info-position">{label}</label>
+      <Select value={(field.value as string) ?? ""} onValueChange={(v) => field.onChange(v ?? "")}>
+        <SelectTrigger id="info-position" className="w-full">
+          <SelectValue placeholder="Select…" />
+        </SelectTrigger>
+        <SelectContent>
+          {positions.map((p) => (
+            <SelectItem key={p.name} value={p.name}>
+              {p.position_name ?? p.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  )
+}
+
+/** Generic Select bound to react-hook-form via useController, for the
+ * plain static-option Select fields (Gender, Marital Status, etc.) —
+ * same option lists and behavior as EmployeeWizard.tsx's Step 0. */
+function SelectField({
+  control,
+  name,
+  id,
+  label,
+  options,
+}: {
+  control: Control<Record<string, unknown>>
+  name: string
+  id: string
+  label: string
+  options: string[]
+}) {
+  const { field } = useController({ control, name, defaultValue: "" })
+  return (
+    <Field id={id} label={label}>
+      <Select value={(field.value as string) ?? ""} onValueChange={(v) => field.onChange(v ?? "")}>
+        <SelectTrigger id={id} className="w-full">
+          <SelectValue placeholder="Select…" />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((o) => (
+            <SelectItem key={o} value={o}>
+              {o}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </Field>
   )
 }
 
@@ -89,6 +167,62 @@ function Field({ id, label, children }: { id: string; label: string; children: R
       <label htmlFor={id}>{label}</label>
       {children}
     </div>
+  )
+}
+
+/** Check-type fields (paid_holiday, leave_credits, etc.) come back from
+ * getDoc as 0/1, not booleans — check against 1 or "1" so an existing
+ * saved value renders correctly, and always write back a plain 1/0 so the
+ * payload matches what the backend's Check fieldtype expects. */
+function CheckboxField({
+  control,
+  name,
+  id,
+  label,
+}: {
+  control: Control<Record<string, unknown>>
+  name: string
+  id: string
+  label: string
+}) {
+  const { field } = useController({ control, name, defaultValue: 0 })
+  const checked = field.value === 1 || field.value === "1" || field.value === true
+  return (
+    <label htmlFor={id} className="flex items-center gap-2 text-sm">
+      <input
+        id={id}
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => field.onChange(e.target.checked ? 1 : 0)}
+        className="h-4 w-4 rounded border-border"
+      />
+      {label}
+    </label>
+  )
+}
+
+/**
+ * Native <fieldset>/<legend> so the divider line is the fieldset's own
+ * border — it automatically spans full width and breaks around the legend
+ * text, unlike a manually-drawn line which gets cut off by its container.
+ */
+function Section({
+  title,
+  children,
+  wide = false,
+}: {
+  title: string
+  children: ReactNode
+  /** Set true for sections in the wide left column, which have room for
+   * up to 4 fields per row. Narrow sidebar sections (e.g. Employment
+   * Details, in the 260px column) stay single-column. */
+  wide?: boolean
+}) {
+  return (
+    <fieldset className="col-span-full rounded-md border border-border px-4 pb-4 pt-2 mt-3 first:mt-0">
+      <legend className="px-2 text-sm font-medium text-muted-foreground">{title}</legend>
+      <div className={`grid gap-3 ${wide ? "sm:grid-cols-2 md:grid-cols-4" : ""}`}>{children}</div>
+    </fieldset>
   )
 }
 
@@ -254,6 +388,19 @@ export function EmployeeDetailTabs({ docName, basePath }: EmployeeDetailTabsProp
       }),
   })
 
+  // position is a Link field (options: "SMS Personnel Position"). Fetch the
+  // live list the same way departments is fetched above — same query shape,
+  // just a different doctype/label field.
+  const { data: positions } = useQuery({
+    queryKey: ["SMS Personnel Position", "list", "employee-detail-tabs"],
+    queryFn: () =>
+      frappe.list<{ name: string; position_name: string | null }>("SMS Personnel Position", {
+        fields: ["name", "position_name"],
+        order_by: "position_name asc",
+        limit_page_length: 500,
+      }),
+  })
+
   const infoMutation = useMutation({
     mutationFn: async (values: Record<string, unknown>) => {
       const payload: Record<string, unknown> = { ...values }
@@ -407,43 +554,179 @@ export function EmployeeDetailTabs({ docName, basePath }: EmployeeDetailTabsProp
           <TabsTrigger value="benefits">Benefits</TabsTrigger>
         </TabsList>
 
+        {/* Info tab: mirrors EmployeeWizard.tsx's Step 0 layout exactly —
+            same two-column grid (fields left, photo + Employment Details
+            sidebar right), same section groupings and option lists — just
+            bound to infoForm (this doc's own react-hook-form instance)
+            instead of the Wizard's local `form` state. */}
         <TabsContent value="info" className="pt-4">
           <Form {...infoForm}>
             <form onSubmit={infoForm.handleSubmit((values) => infoMutation.mutate(values))}>
-              <div className="flex gap-4 items-start pb-4">
-                <label
-                  htmlFor="info-profile"
-                  className="flex h-24 w-24 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-md border bg-muted text-[10px] text-muted-foreground"
-                >
-                  {profilePreviewUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={profilePreviewUrl} alt="Profile preview" className="h-full w-full object-cover" />
-                  ) : (
-                    "No Photo"
-                  )}
-                  <input
-                    id="info-profile"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleProfileChange}
-                  />
-                </label>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {employeeSpec.fields.map((f) =>
-                  f.fieldname === "department" ? (
-                    <DepartmentField
-                      key={f.fieldname}
+              <div className="grid gap-6 md:grid-cols-[1fr_260px]">
+                <div className="grid gap-3">
+                  <Section title="System Identification" wide>
+                    <Field id="info-employee-id" label="Employee ID">
+                      <Input id="info-employee-id" {...infoForm.register("employee_id")} />
+                    </Field>
+                    <Field id="info-rfid" label="RFID">
+                      <Input id="info-rfid" {...infoForm.register("rfid")} />
+                    </Field>
+                  </Section>
+
+                  <Section title="Personal Information" wide>
+                    <Field id="info-first-name" label="First Name">
+                      <Input id="info-first-name" {...infoForm.register("first_name")} />
+                    </Field>
+                    <Field id="info-middle-name" label="Middle Name">
+                      <Input id="info-middle-name" {...infoForm.register("middle_name")} />
+                    </Field>
+                    <Field id="info-last-name" label="Last Name">
+                      <Input id="info-last-name" {...infoForm.register("last_name")} />
+                    </Field>
+                    <Field id="info-title" label="Title">
+                      <Input id="info-title" {...infoForm.register("title")} />
+                    </Field>
+                    <Field id="info-birthdate" label="Birthdate">
+                      <Input id="info-birthdate" type="date" {...infoForm.register("birthdate")} />
+                    </Field>
+                    <SelectField
                       control={infoForm.control}
-                      label={f.label}
-                      departments={departments ?? []}
+                      name="gender"
+                      id="info-gender"
+                      label="Gender"
+                      options={GENDER_OPTIONS}
                     />
-                  ) : (
-                    <DynamicField key={f.fieldname} control={infoForm.control} spec={f} />
-                  )
-                )}
+                    <Field id="info-num-dependents" label="Number of Dependents">
+                      <Input id="info-num-dependents" type="number" {...infoForm.register("number_of_dependents")} />
+                    </Field>
+                    <SelectField
+                      control={infoForm.control}
+                      name="marital_status"
+                      id="info-marital-status"
+                      label="Marital Status"
+                      options={MARITAL_STATUS_OPTIONS}
+                    />
+                    <SelectField
+                      control={infoForm.control}
+                      name="nationality"
+                      id="info-nationality"
+                      label="Nationality"
+                      options={NATIONALITY_OPTIONS}
+                    />
+                    <Field id="info-religion" label="Religion">
+                      <Input id="info-religion" {...infoForm.register("religion")} />
+                    </Field>
+                  </Section>
+
+                  <Section title="Contact & Location" wide>
+                    <Field id="info-contact-number" label="Contact Number">
+                      <Input id="info-contact-number" {...infoForm.register("contact_number")} />
+                    </Field>
+                    <Field id="info-birthplace" label="Birthplace">
+                      <Input id="info-birthplace" {...infoForm.register("birthplace")} />
+                    </Field>
+                    <Field id="info-mailing-address" label="Mailing Address">
+                      <Input id="info-mailing-address" {...infoForm.register("mailing_address")} />
+                    </Field>
+                  </Section>
+
+                  <Section title="Government IDs" wide>
+                    <Field id="info-tin-number" label="TIN Number">
+                      <Input id="info-tin-number" {...infoForm.register("tin_number")} />
+                    </Field>
+                    <Field id="info-sss-number" label="SSS Number">
+                      <Input id="info-sss-number" {...infoForm.register("sss_number")} />
+                    </Field>
+                    <Field id="info-philhealth" label="PhilHealth">
+                      <Input id="info-philhealth" {...infoForm.register("philhealth")} />
+                    </Field>
+                    <Field id="info-pag-ibig" label="Pag-IBIG">
+                      <Input id="info-pag-ibig" {...infoForm.register("pag_ibig")} />
+                    </Field>
+                  </Section>
+                </div>
+
+                <div className="flex flex-col gap-5">
+                  <div>
+                    <p className="mb-2 text-sm font-medium text-muted-foreground">Profile Photo</p>
+                    <label
+                      htmlFor="info-profile"
+                      className="flex h-24 w-24 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-md border bg-muted text-[10px] text-muted-foreground"
+                    >
+                      {profilePreviewUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={profilePreviewUrl} alt="Profile preview" className="h-full w-full object-cover" />
+                      ) : (
+                        "No Photo"
+                      )}
+                      <input
+                        id="info-profile"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleProfileChange}
+                      />
+                    </label>
+                  </div>
+
+                  <Section title="Employment Details">
+                    <SelectField
+                      control={infoForm.control}
+                      name="employee_status"
+                      id="info-employee-status"
+                      label="Employee Status"
+                      options={EMPLOYEE_STATUS_OPTIONS}
+                    />
+                    <Field id="info-date-hired" label="Date Hired">
+                      <Input id="info-date-hired" type="date" {...infoForm.register("date_hired")} />
+                    </Field>
+                    <DepartmentField control={infoForm.control} label="Department" departments={departments ?? []} />
+                    <PositionField control={infoForm.control} label="Position" positions={positions ?? []} />
+                    <SelectField
+                      control={infoForm.control}
+                      name="work_status"
+                      id="info-work-status"
+                      label="Work Status"
+                      options={WORK_STATUS_OPTIONS}
+                    />
+                  </Section>
+                </div>
               </div>
+
+              {/* Fields on employeeSpec that aren't part of the Wizard's
+                  Step 0 layout (so they were missing from this tab
+                  entirely until now): emergency_contacts,
+                  family_dependents, skills, vacation_leave, sick_leave,
+                  and the five policy Check fields. Rendered as a full-width
+                  block below the two-column layout above. */}
+              <div className="grid gap-3 mt-3">
+                <Section title="Additional Details" wide>
+                  <Field id="info-emergency-contacts" label="Emergency Contacts">
+                    <Input id="info-emergency-contacts" {...infoForm.register("emergency_contacts")} />
+                  </Field>
+                  <Field id="info-family-dependents" label="Family/Dependents">
+                    <Input id="info-family-dependents" {...infoForm.register("family_dependents")} />
+                  </Field>
+                  <Field id="info-skills" label="Skills">
+                    <Input id="info-skills" {...infoForm.register("skills")} />
+                  </Field>
+                  <Field id="info-vacation-leave" label="Vacation Leave">
+                    <Input id="info-vacation-leave" type="number" step="0.5" {...infoForm.register("vacation_leave")} />
+                  </Field>
+                  <Field id="info-sick-leave" label="Sick Leave">
+                    <Input id="info-sick-leave" type="number" step="0.5" {...infoForm.register("sick_leave")} />
+                  </Field>
+                </Section>
+
+                <Section title="Policies" wide>
+                  <CheckboxField control={infoForm.control} name="paid_holiday" id="info-paid-holiday" label="Paid Holiday" />
+                  <CheckboxField control={infoForm.control} name="leave_credits" id="info-leave-credits" label="Leave Credits" />
+                  <CheckboxField control={infoForm.control} name="official_business" id="info-official-business" label="Official Business" />
+                  <CheckboxField control={infoForm.control} name="late_immunity" id="info-late-immunity" label="Late Immunity" />
+                  <CheckboxField control={infoForm.control} name="absent_immunity" id="info-absent-immunity" label="Absent Immunity" />
+                </Section>
+              </div>
+
               <div className="flex justify-end pt-4">
                 <Button type="submit" disabled={infoMutation.isPending}>
                   {infoMutation.isPending ? "Saving…" : "Save"}

@@ -4,7 +4,7 @@ import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { FilterIcon, PencilIcon, PlusIcon, SearchIcon, Trash2Icon, XIcon } from "lucide-react"
+import { EyeIcon, FilterIcon, MoreVerticalIcon, PlusIcon, SearchIcon, Trash2Icon, XIcon } from "lucide-react"
 
 import { frappe, getErrorMessage } from "@/lib/frappe"
 import { employeeSpec } from "@/lib/forms/personnel"
@@ -17,6 +17,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
   Table,
   TableBody,
@@ -53,6 +59,16 @@ interface EmployeesListProps {
  * multi-step wizard and each row opens a tabbed detail page, not
  * MasterDetailScreen's single-dialog add/edit — so this reproduces just its
  * search/filter behavior client-side over the fetched rows.
+ *
+ * Row actions: a single kebab (⋮) menu per row, matching the app's
+ * standard row-menu pattern elsewhere — but scoped down to just View and
+ * Delete for Employees specifically. Edit and Drop (both present in the
+ * app's usual menu) are intentionally omitted here: "edit" already IS
+ * "view" for this screen (the detail page at `${basePath}/${name}` is
+ * fully editable via EmployeeDetailTabs, so a separate Edit entry would
+ * just duplicate View), and Drop (soft-disable via a status field) doesn't
+ * apply — Personnel Info has no such status/drop field the way e.g.
+ * enrollment records do.
  */
 export function EmployeesList({ basePath }: EmployeesListProps) {
   const router = useRouter()
@@ -192,28 +208,36 @@ export function EmployeesList({ basePath }: EmployeesListProps) {
                   {listColumns.map((c) => (
                     <TableCell key={c.fieldname}>{row[c.fieldname] ?? ""}</TableCell>
                   ))}
-                  <TableCell className="flex gap-1 justify-end" onClick={(e) => e.stopPropagation()}>
-                    <Button
-                      type="button"
-                      size="icon-sm"
-                      variant="ghost"
-                      aria-label={`Open ${row.first_name} ${row.last_name}`}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        router.push(`${basePath}/${encodeURIComponent(row.name)}`)
-                      }}
-                    >
-                      <PencilIcon />
-                    </Button>
-                    <Button
-                      type="button"
-                      size="icon-sm"
-                      variant="ghost"
-                      aria-label={`Delete ${row.first_name} ${row.last_name}`}
-                      onClick={() => deleteMutation.mutate(row.name)}
-                    >
-                      <Trash2Icon />
-                    </Button>
+                  <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        render={
+                          <Button
+                            type="button"
+                            size="icon-sm"
+                            variant="ghost"
+                            aria-label={`Actions for ${row.first_name} ${row.last_name}`}
+                          />
+                        }
+                      >
+                        <MoreVerticalIcon />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => router.push(`${basePath}/${encodeURIComponent(row.name)}`)}
+                        >
+                          <EyeIcon />
+                          View
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          variant="destructive"
+                          onClick={() => deleteMutation.mutate(row.name)}
+                        >
+                          <Trash2Icon />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))

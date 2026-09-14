@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
+import { EmployeeSearchField } from "@/components/ui/personnel/EmployeeSearchField"
 import { frappe, getErrorMessage } from "@/lib/frappe"
 import { leaveApplicationFields } from "@/lib/forms/personnel"
 import { Button } from "@/components/ui/button"
@@ -85,9 +86,13 @@ export function LeaveApplicationsPanel() {
                         className="grid gap-5"
                     >
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            {leaveApplicationFields.map((f) => (
-                                <DynamicField key={f.fieldname} control={form.control} spec={f} />
-                            ))}
+                            {leaveApplicationFields.map((f) =>
+                                f.fieldname === "employee_id" ? (
+                                    <EmployeeSearchField key={f.fieldname} control={form.control} label={f.label} idPrefix={f.fieldname} />
+                                ) : (
+                                    <DynamicField key={f.fieldname} control={form.control} spec={f} />
+                                )
+                            )}
                         </div>
                         <Button type="submit" className="w-fit" disabled={addMutation.isPending}>
                             {addMutation.isPending ? "Submitting…" : "Submit"}

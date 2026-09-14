@@ -22,7 +22,7 @@ export const loansComponent = () => {
             </TabsList>
             <TabsContent value="loans-applications" className="mt-0 min-w-0 flex-1">
                 <div className="tabContent h-full! min-w-0 max-w-full overflow-y-auto rounded-md border-border">
-                    <div className="rounded-2xl border border-border h-full p-7">
+                    <div className="rounded-2xl border border-border p-7">
                         <LoanApplicationEntry basePath="/personnel/loan-applications" />
                     </div>
                 </div>
