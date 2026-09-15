@@ -333,6 +333,41 @@ def compute_grade_points(course_enrollment: str) -> dict:
 	return {"points": points, "is_passing": is_passing, "grade_code": best_match.grade_code}
 
 
+@frappe.whitelist()
+def save_grades(
+	course_enrollment: str,
+	prelim: float | None = None,
+	midterm: float | None = None,
+	final: float | None = None,
+	final_rating: str | None = None,
+) -> dict:
+	"""Grade entry backing the registrar's Student Grades dialog (all-grades.tsx).
+	Each field is set to exactly what's passed - including None, so a
+	previously-entered mark can be cleared back to blank - rather than
+	skipping unset ones, since the frontend always submits a row's full
+	current draft together (Prelim/Midterm/Final/Final Rating are edited as
+	one row, not field-by-field). Does not itself compute points/status/
+	grade_remarks from final_rating - that stays compute_grade_points()'s own
+	explicit step.
+	"""
+	doc = frappe.get_doc("Course Enrollment", course_enrollment)
+
+	doc.prelim = flt(prelim) if prelim is not None else None
+	doc.midterm = flt(midterm) if midterm is not None else None
+	doc.final = flt(final) if final is not None else None
+	doc.final_rating = final_rating.strip() if final_rating else None
+
+	doc.save(ignore_permissions=frappe.has_permission("Course Enrollment", "write", doc=doc))
+
+	return {
+		"name": doc.name,
+		"prelim": doc.prelim,
+		"midterm": doc.midterm,
+		"final": doc.final,
+		"final_rating": doc.final_rating,
+	}
+
+
 def _is_number(value) -> bool:
 	try:
 		float(value)

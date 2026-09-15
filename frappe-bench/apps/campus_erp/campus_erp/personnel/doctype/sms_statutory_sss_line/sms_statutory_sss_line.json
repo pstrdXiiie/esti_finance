@@ -1,0 +1,53 @@
+{
+ "doctype": "DocType",
+ "name": "SMS Statutory SSS Line",
+ "module": "Personnel",
+ "custom": 0,
+ "istable": 1,
+ "is_submittable": 0,
+ "autoname": "hash",
+ "track_changes": 0,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "engine": "InnoDB",
+ "fields": [
+  {
+   "fieldname": "employee",
+   "label": "Employee",
+   "fieldtype": "Link",
+   "options": "Personnel Info",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "sss_number",
+   "label": "SSS Number",
+   "fieldtype": "Data",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "monthly_contribution",
+   "label": "Monthly Contribution",
+   "fieldtype": "Currency",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "ec_contribution",
+   "label": "EC Contribution",
+   "fieldtype": "Currency",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "is_manual_override",
+   "label": "Is Manual Override",
+   "fieldtype": "Check",
+   "default": "0"
+  },
+  {
+   "fieldname": "override_remark",
+   "label": "Override Remark",
+   "fieldtype": "Data"
+  }
+ ],
+ "permissions": []
+}

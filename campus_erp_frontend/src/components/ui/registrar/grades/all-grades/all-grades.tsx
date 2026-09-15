@@ -1,9 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { toast } from "sonner"
 
-import { frappe } from "@/lib/frappe"
+import { frappe, getErrorMessage } from "@/lib/frappe"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -91,6 +92,22 @@ const STATUS_PRIORITY: Record<string, number> = {
   Completed: 2,
 }
 
+// Empty means "clear this grade" (matches save_grades' None semantics);
+// anything else must parse to a finite number — left unguarded, a stray "-",
+// ".", or "1e" (all valid intermediate states for a number input, so the
+// browser won't block them) would coerce via Number() to NaN, which
+// JSON.stringify silently turns into `null`, clearing the grade instead of
+// surfacing a validation error.
+function parseNumericGrade(value: string): number | null {
+  const trimmed = value.trim()
+  if (trimmed === "") return null
+  const parsed = Number(trimmed)
+  if (!Number.isFinite(parsed)) {
+    throw new Error(`"${trimmed}" is not a valid number`)
+  }
+  return parsed
+}
+
 /**
  * All Grades tab: every grade record on file, filterable by School Year and
  * (optionally) Program, via campus_erp.api.registrar.list_grades. Purely a
@@ -102,6 +119,10 @@ export default function AllGrades() {
   const [program, setProgram] = useState("")
   const [search, setSearch] = useState("")
   const [selectedStudent, setSelectedStudent] = useState<SelectedStudent | null>(null)
+  const [editedGrades, setEditedGrades] = useState<
+    Record<string, { prelim: string; midterm: string; final: string; final_rating: string }>
+  >({})
+  const queryClient = useQueryClient()
 
   const academicYearsQuery = useQuery({
     queryKey: ["Academic Year", "list", "all-grades"],
@@ -213,6 +234,127 @@ export default function AllGrades() {
   })
 
   const studentGrades = studentGradesQuery.data ?? []
+
+  // Each row's editable draft, defaulting to its last-fetched values until
+  // the registrar types something — so unedited rows read as unchanged
+  // (isRowDirty below) without needing to seed editedGrades on load.
+  function draftFor(row: GradeRow) {
+    return (
+      editedGrades[row.name] ?? {
+        prelim: row.prelim?.toString() ?? "",
+        midterm: row.midterm?.toString() ?? "",
+        final: row.final?.toString() ?? "",
+        final_rating: row.final_rating ?? "",
+      }
+    )
+  }
+
+  function updateGradeField(
+    row: GradeRow,
+    field: "prelim" | "midterm" | "final" | "final_rating",
+    value: string
+  ) {
+    // Bases the merge on `prev`, not the outer `editedGrades` (via
+    // draftFor) — two field edits on the same row landing in one React
+    // batch must both survive, not have the second overwrite the first.
+    setEditedGrades((prev) => {
+      const base = prev[row.name] ?? {
+        prelim: row.prelim?.toString() ?? "",
+        midterm: row.midterm?.toString() ?? "",
+        final: row.final?.toString() ?? "",
+        final_rating: row.final_rating ?? "",
+      }
+      return { ...prev, [row.name]: { ...base, [field]: value } }
+    })
+  }
+
+  function isRowDirty(row: GradeRow) {
+    const draft = editedGrades[row.name]
+    if (!draft) return false
+    return (
+      draft.prelim !== (row.prelim?.toString() ?? "") ||
+      draft.midterm !== (row.midterm?.toString() ?? "") ||
+      draft.final !== (row.final?.toString() ?? "") ||
+      draft.final_rating !== (row.final_rating ?? "")
+    )
+  }
+
+  const dirtyGradeRows = studentGrades.filter(isRowDirty)
+
+  // One row = one Course Enrollment document, so "Save Grades" fires one
+  // save_grades RPC per changed row rather than a single batch call — there's
+  // no parent doc to batch these under (unlike the child-table shape
+  // ChildTableGrid handles elsewhere). Promise.allSettled (not .all), and
+  // per-row validation before any call goes out, so one bad/failing row
+  // neither blocks nor hides that the other rows did save.
+  const saveGradesMutation = useMutation({
+    mutationFn: async () => {
+      const rowsToSave = dirtyGradeRows
+      const invalid: Array<{ row: GradeRow; error: string }> = []
+      const toSubmit: Array<{ row: GradeRow; payload: Record<string, unknown> }> = []
+
+      for (const row of rowsToSave) {
+        const draft = draftFor(row)
+        try {
+          toSubmit.push({
+            row,
+            payload: {
+              course_enrollment: row.name,
+              prelim: parseNumericGrade(draft.prelim),
+              midterm: parseNumericGrade(draft.midterm),
+              final: parseNumericGrade(draft.final),
+              final_rating: draft.final_rating.trim() === "" ? null : draft.final_rating.trim(),
+            },
+          })
+        } catch (error) {
+          invalid.push({ row, error: error instanceof Error ? error.message : "Invalid value" })
+        }
+      }
+
+      const results = await Promise.allSettled(
+        toSubmit.map((p) => frappe.call("campus_erp.api.registrar.save_grades", p.payload))
+      )
+
+      const saved: string[] = []
+      const failed: Array<{ row: GradeRow; error: unknown }> = []
+      results.forEach((result, i) => {
+        if (result.status === "fulfilled") saved.push(toSubmit[i].row.name)
+        else failed.push({ row: toSubmit[i].row, error: result.reason })
+      })
+
+      return { saved, failed, invalid }
+    },
+    onSuccess: async ({ saved, failed, invalid }) => {
+      if (saved.length > 0) {
+        // Refetch before clearing local drafts for just the saved rows, so
+        // draftFor reads the freshly-saved value immediately instead of
+        // briefly reverting to the pre-edit one while the refetch is still
+        // in flight.
+        await queryClient.invalidateQueries({ queryKey: ["all-grades"] })
+        setEditedGrades((prev) => {
+          const next = { ...prev }
+          for (const name of saved) delete next[name]
+          return next
+        })
+      }
+
+      const problems = [
+        ...invalid.map((p) => `${p.row.course_name}: ${p.error}`),
+        ...failed.map((f) => `${f.row.course_name}: ${getErrorMessage(f.error)}`),
+      ]
+
+      if (problems.length === 0) {
+        toast.success("Grades saved")
+      } else if (saved.length === 0) {
+        toast.error(problems.join("; "))
+      } else {
+        toast.error(
+          `Saved ${saved.length} of ${saved.length + problems.length} subjects. ${problems.join("; ")}`
+        )
+      }
+    },
+    onError: (error) => toast.error(`Could not save grades: ${getErrorMessage(error)}`),
+  })
 
   function handlePrintStudent() {
     if (!selectedStudent) return
@@ -350,7 +492,8 @@ export default function AllGrades() {
                 <TableRow
                   key={row.name}
                   className="cursor-pointer hover:bg-muted/50 print:pointer-events-none"
-                  onClick={() =>
+                  onClick={() => {
+                    setEditedGrades({})
                     setSelectedStudent({
                       name: row.student,
                       student_name: row.student_name,
@@ -360,7 +503,7 @@ export default function AllGrades() {
                       semester: row.semester,
                       academic_year: row.academic_year,
                     })
-                  }
+                  }}
                   title="View all grades for this student"
                 >
                   <TableCell className="font-medium min-w-48">
@@ -412,7 +555,12 @@ export default function AllGrades() {
 
       <Dialog
         open={!!selectedStudent}
-        onOpenChange={(open) => !open && setSelectedStudent(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedStudent(null)
+            setEditedGrades({})
+          }
+        }}
       >
         <DialogContent className="w-full max-w-3xl sm:max-w-3xl print:hidden">
           <DialogHeader>
@@ -474,16 +622,54 @@ export default function AllGrades() {
                   </TableRow>
                 )}
                 {!studentGradesQuery.isLoading &&
-                  studentGrades.map((row) => (
-                    <TableRow key={row.name}>
-                      <TableCell className="font-medium">{row.course_name}</TableCell>
-                      <TableCell>{row.subject_code ?? "—"}</TableCell>
-                      <TableCell>{row.prelim ?? "—"}</TableCell>
-                      <TableCell>{row.midterm ?? "—"}</TableCell>
-                      <TableCell>{row.final ?? "—"}</TableCell>
-                      <TableCell>{row.final_rating ?? "—"}</TableCell>
-                    </TableRow>
-                  ))}
+                  studentGrades.map((row) => {
+                    const draft = draftFor(row)
+                    return (
+                      <TableRow key={row.name}>
+                        <TableCell className="font-medium">{row.course_name}</TableCell>
+                        <TableCell>{row.subject_code ?? "—"}</TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            inputMode="decimal"
+                            className="w-20"
+                            disabled={saveGradesMutation.isPending}
+                            value={draft.prelim}
+                            onChange={(e) => updateGradeField(row, "prelim", e.target.value)}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            inputMode="decimal"
+                            className="w-20"
+                            disabled={saveGradesMutation.isPending}
+                            value={draft.midterm}
+                            onChange={(e) => updateGradeField(row, "midterm", e.target.value)}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            inputMode="decimal"
+                            className="w-20"
+                            disabled={saveGradesMutation.isPending}
+                            value={draft.final}
+                            onChange={(e) => updateGradeField(row, "final", e.target.value)}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            className="w-24"
+                            placeholder="e.g. 1.75, INC"
+                            disabled={saveGradesMutation.isPending}
+                            value={draft.final_rating}
+                            onChange={(e) => updateGradeField(row, "final_rating", e.target.value)}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
                 {!studentGradesQuery.isLoading && studentGrades.length === 0 && (
                   <TableRow>
                     <TableCell
@@ -506,6 +692,17 @@ export default function AllGrades() {
               onClick={handlePrintStudent}
             >
               Print
+            </Button>
+            <Button
+              type="button"
+              disabled={
+                studentGradesQuery.isLoading ||
+                dirtyGradeRows.length === 0 ||
+                saveGradesMutation.isPending
+              }
+              onClick={() => saveGradesMutation.mutate()}
+            >
+              {saveGradesMutation.isPending ? "Saving…" : "Save Grades"}
             </Button>
           </DialogFooter>
         </DialogContent>

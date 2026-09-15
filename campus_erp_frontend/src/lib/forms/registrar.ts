@@ -81,16 +81,18 @@ export const permitSpec: EntrySpec = {
   title: "Permit to Take Exam",
   fields: [
     { fieldname: "student", label: "Student", fieldtype: "Link", options: "Student", required: true },
-    { fieldname: "course", label: "Program", fieldtype: "Link", options: "Program" },
-    { fieldname: "year_level", label: "Year Level", fieldtype: "Int" },
-    { fieldname: "semester", label: "Semester", fieldtype: "Int" },
+    { fieldname: "student_name", label: "Student Name", fieldtype: "Data", readOnly: true, inListView: true },
+    { fieldname: "course", label: "Program", fieldtype: "Link", options: "Program", inListView: true },
+    { fieldname: "year_level", label: "Year Level", fieldtype: "Int", inListView: true },
+    { fieldname: "semester", label: "Semester", fieldtype: "Int", inListView: true },
     { fieldname: "school_year", label: "School Year", fieldtype: "Data" },
     { fieldname: "term", label: "Exam Period", fieldtype: "Data" },
-    { fieldname: "total_fee", label: "Total Fee", fieldtype: "Currency" },
-    { fieldname: "payment", label: "Payment", fieldtype: "Currency" },
-    { fieldname: "due_payment", label: "Due Payment", fieldtype: "Currency" },
+    { fieldname: "assessment", label: "Assessment", fieldtype: "Link", options: "SMS Student Assessment" },
+    { fieldname: "total_fee", label: "Total Fee", fieldtype: "Currency", readOnly: true },
+    { fieldname: "payment", label: "Payment", fieldtype: "Currency", readOnly: true },
+    { fieldname: "due_payment", label: "Due Payment", fieldtype: "Currency", readOnly: true },
     { fieldname: "status", label: "Status", fieldtype: "Select", options: "Pending\nEligible\nIssued" },
-    { fieldname: "permit_no", label: "Permit No.", fieldtype: "Data" },
+    { fieldname: "permit_no", label: "Permit No.", fieldtype: "Data", readOnly: true },
   ],
   childTable: {
     fieldname: "subjects",
@@ -100,6 +102,43 @@ export const permitSpec: EntrySpec = {
       { fieldname: "class", label: "Class (Student Group)", fieldtype: "Link", options: "Student Group" },
     ],
   },
+}
+
+/**
+ * "Request for Official Transcript of Records" (Registrar > Reports > Student
+ * Credentials) — a create-only intake form: every Print creates one new SMS
+ * Transcript record (naming series TOR-.YY.-.##), it never loads/edits an
+ * existing one, so this spec lists only the fields that are actually
+ * editable on that screen. Student No/Name/Course and the whole Educational
+ * Data block are persistent Student facts edited elsewhere in the app (see
+ * studentSpec) and are shown read-only there instead of being part of this
+ * doctype's own editable field list. The `subjects` child table (grade rows)
+ * is likewise out of scope — the legacy form this mirrors is a request slip,
+ * not a grade sheet.
+ */
+export const transcriptSpec: EntrySpec = {
+  doctype: "SMS Transcript",
+  title: "Official Transcript of Records",
+  fields: [
+    { fieldname: "student", label: "Student", fieldtype: "Link", options: "Student", required: true },
+    { fieldname: "is_graduated", label: "Graduated", fieldtype: "Check" },
+    { fieldname: "date_graduated", label: "Date Graduated", fieldtype: "Date" },
+    { fieldname: "honors", label: "Honors/Distinction", fieldtype: "Data" },
+    { fieldname: "is_transferee", label: "Check if Transferee", fieldtype: "Check" },
+    { fieldname: "issued_to", label: "Official TOR Issued To", fieldtype: "Data" },
+    { fieldname: "entrance_credentials", label: "Entrance Credentials To", fieldtype: "Data" },
+    { fieldname: "status_of_admission", label: "Status of Admission", fieldtype: "Data" },
+    { fieldname: "date_of_admission", label: "Date of Admission", fieldtype: "Date" },
+    { fieldname: "date_of_transfer", label: "Transfer Date", fieldtype: "Date" },
+    { fieldname: "so_no", label: "Special Order No.", fieldtype: "Data" },
+    { fieldname: "date_issued", label: "Date Issued", fieldtype: "Date" },
+    { fieldname: "or_no", label: "OR No.", fieldtype: "Data" },
+    { fieldname: "remarks", label: "Remarks", fieldtype: "Small Text" },
+    { fieldname: "attachments", label: "Attachments (If any)", fieldtype: "Small Text" },
+    { fieldname: "prepared_by", label: "Prepared by", fieldtype: "Link", options: "User" },
+    { fieldname: "checked_by", label: "Checked by", fieldtype: "Link", options: "User" },
+    { fieldname: "registrar", label: "Registrar", fieldtype: "Link", options: "User" },
+  ],
 }
 
 

@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
@@ -11,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Form } from "@/components/ui/form"
 import { DynamicField } from "@/components/sms/DynamicField"
 import { EmployeeSearchField } from "@/components/ui/personnel/EmployeeSearchField"
+import { TimeField } from "@/components/ui/personnel/TimeField"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -30,6 +32,10 @@ interface OvertimeDoc extends Record<string, unknown> {
 }
 
 const listColumns = overtimeSpec.fields.filter((f) => f.inListView)
+
+// Fields rendered via the standalone TimeField instead of DynamicField —
+// see TimeField.tsx's doc comment for why.
+const TIME_FIELDNAMES = new Set(["time_from", "time_to"])
 
 /**
  * Bespoke — replaces the generic EntryScreen. OvertimeWorkflowPanel is
@@ -70,6 +76,34 @@ export function OvertimeEntry({ docName }: { docName?: string }) {
     defaultValues: doc ?? {},
     values: doc,
   })
+
+  // Auto-computes num_hours (readOnly field in overtimeSpec) from
+  // time_from/time_to whenever either changes. TimeField stores/emits
+  // plain "HH:mm" strings (native <input type="time">), which is what
+  // toMinutes() below expects. Handles overtime spanning midnight by
+  // treating a negative raw diff as wrapping into the next day.
+  const timeFrom = form.watch("time_from") as string | undefined
+  const timeTo = form.watch("time_to") as string | undefined
+
+  useEffect(() => {
+    if (!timeFrom || !timeTo) return
+
+    const toMinutes = (t: string) => {
+      const [h, m] = t.split(":").map(Number)
+      if (Number.isNaN(h) || Number.isNaN(m)) return null
+      return h * 60 + m
+    }
+
+    const fromMinutes = toMinutes(timeFrom)
+    const toMinutesVal = toMinutes(timeTo)
+    if (fromMinutes === null || toMinutesVal === null) return
+
+    let diffMinutes = toMinutesVal - fromMinutes
+    if (diffMinutes < 0) diffMinutes += 24 * 60
+
+    const hours = Math.round((diffMinutes / 60) * 100) / 100
+    form.setValue("num_hours", hours, { shouldDirty: true })
+  }, [timeFrom, timeTo, form])
 
   const saveMutation = useMutation({
     mutationFn: async (values: Record<string, unknown>) =>
@@ -117,13 +151,24 @@ export function OvertimeEntry({ docName }: { docName?: string }) {
             className="grid gap-5"
           >
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {overtimeSpec.fields.map((f) =>
-                f.fieldname === "employee" ? (
-                  <EmployeeSearchField key={f.fieldname} control={form.control} label={f.label} idPrefix={f.fieldname} />
-                ) : (
-                  <DynamicField key={f.fieldname} control={form.control} spec={f} />
-                )
-              )}
+              {overtimeSpec.fields.map((f) => {
+                if (f.fieldname === "employee") {
+                  return (
+                    <EmployeeSearchField
+                      key={f.fieldname}
+                      control={form.control}
+                      label={f.label}
+                      idPrefix={f.fieldname}
+                    />
+                  )
+                }
+                if (TIME_FIELDNAMES.has(f.fieldname)) {
+                  return (
+                    <TimeField key={f.fieldname} control={form.control} name={f.fieldname} label={f.label} />
+                  )
+                }
+                return <DynamicField key={f.fieldname} control={form.control} spec={f} />
+              })}
             </div>
             <Button type="submit" className="w-fit" disabled={saveMutation.isPending}>
               {saveMutation.isPending ? "Saving…" : "Save"}

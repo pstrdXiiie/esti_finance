@@ -28,12 +28,9 @@ import { Search } from "lucide-react";
 export function EntryListScreen({
   spec,
   basePath,
-  inlineAdd = false,
 }: {
   spec: EntrySpec
   basePath: string
-  /** When true, "Add" opens an inline panel above the table instead of navigating to a new route. */
-  inlineAdd?: boolean
 }) {
   const queryClient = useQueryClient()
   const [showAddPanel, setShowAddPanel] = useState(false)
@@ -42,10 +39,11 @@ export function EntryListScreen({
   const columns = listColumns.length ? listColumns : spec.fields.slice(0, 4)
 
   const { data, isLoading } = useQuery({
-    queryKey: [spec.doctype, "list"],
+    queryKey: [spec.doctype, "list", filters],
     queryFn: () =>
       frappe.list(spec.doctype, {
         fields: ["name", ...spec.fields.map((f) => f.fieldname)],
+        filters,
         limit_page_length: 100,
       }),
   })

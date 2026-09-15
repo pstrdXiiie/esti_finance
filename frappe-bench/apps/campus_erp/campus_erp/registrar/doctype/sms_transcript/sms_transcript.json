@@ -11,10 +11,13 @@
   "student",
   "tor_number",
   "is_graduated",
+  "date_graduated",
   "is_transferee",
   "so_no",
+  "or_no",
   "honors",
   "remarks",
+  "attachments",
   "issued_to",
   "status_of_admission",
   "date_of_admission",
@@ -22,6 +25,7 @@
   "entrance_credentials",
   "prepared_by",
   "checked_by",
+  "registrar",
   "date_issued",
   "receivable_balance_at_issuance",
   "subjects"
@@ -55,6 +59,11 @@
    "label": "Is Graduated"
   },
   {
+   "fieldname": "date_graduated",
+   "fieldtype": "Date",
+   "label": "Date Graduated"
+  },
+  {
    "fieldname": "is_transferee",
    "fieldtype": "Check",
    "label": "Is Transferee"
@@ -65,6 +74,11 @@
    "label": "S.O. No"
   },
   {
+   "fieldname": "or_no",
+   "fieldtype": "Data",
+   "label": "OR No."
+  },
+  {
    "fieldname": "honors",
    "fieldtype": "Data",
    "label": "Honors"
@@ -73,6 +87,11 @@
    "fieldname": "remarks",
    "fieldtype": "Small Text",
    "label": "Remarks"
+  },
+  {
+   "fieldname": "attachments",
+   "fieldtype": "Small Text",
+   "label": "Attachments (If any)"
   },
   {
    "fieldname": "issued_to",
@@ -109,6 +128,12 @@
    "fieldname": "checked_by",
    "fieldtype": "Link",
    "label": "Checked By",
+   "options": "User"
+  },
+  {
+   "fieldname": "registrar",
+   "fieldtype": "Link",
+   "label": "Registrar",
    "options": "User"
   },
   {

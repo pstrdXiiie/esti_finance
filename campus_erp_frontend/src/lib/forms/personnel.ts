@@ -68,6 +68,13 @@ export const employeeBenefitSpec: EntrySpec = {
   ],
 }
 
+export const positionSpec: FormSpec = {
+  doctype: "SMS Personnel Position",
+  title: "Positions",
+  fields: [
+    { fieldname: "position_name", label: "Position Name", fieldtype: "Data", required: true, inListView: true },
+  ],
+}
 /**
  * Employee-loan subsystem (campus_erp/personnel/doctype/sms_loan_*, backed by
  * campus_erp/api/personnel.py). `attachment` (fieldtype Attach) is left off
@@ -181,6 +188,7 @@ export const employeeSpec: FormSpec = {
     { fieldname: "middle_name", label: "Middle Name", fieldtype: "Data" },
     { fieldname: "title", label: "Title", fieldtype: "Data" },
     { fieldname: "department", label: "Department", fieldtype: "Link", options: "SMS Personnel Departments", inListView: true, dropdown: true },
+    { fieldname: "position", label: "Position", fieldtype: "Link", options: "SMS Personnel Position", inListView: true, dropdown: true },
     { fieldname: "employee_status", label: "Employee Status", fieldtype: "Select", options: "Contractual\nPart Timer\nProbationary\nRegular", inListView: true },
     { fieldname: "work_status", label: "Work Status", fieldtype: "Select", options: "In Active\nActive\nExecutive\nConsultant", inListView: true },
     { fieldname: "date_hired", label: "Date Hired", fieldtype: "Date", inListView: true },
@@ -296,7 +304,14 @@ export const employeeWizardLayout: WizardLayout = {
     {
       key: "employment",
       label: "Employment",
-      fieldnames: ["department", "employee_status", "work_status", "date_hired", "rfid"],
+      fieldnames: [
+        "department",
+        "position",
+        "employee_status",
+        "work_status",
+        "date_hired",
+        "rfid",
+      ],
     },
     {
       key: "personal",

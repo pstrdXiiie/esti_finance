@@ -163,7 +163,6 @@ def remove_orphan_doctypes():
 			get_controller(doctype=doctype)
 		except ImportError:
 			orphan_doctypes.append(doctype)
-		except Exception:
 			continue
 
 	if not orphan_doctypes:

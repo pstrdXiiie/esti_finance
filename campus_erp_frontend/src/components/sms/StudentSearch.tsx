@@ -133,7 +133,7 @@ export default function StudentSearch({
       <div className="flex gap-2 items-center">
         <Input
           id={`${idPrefix}-student-search`}
-          className="w-56"
+          className="min-w-0 flex-1"
           placeholder="Student No. or Name"
           value={query}
           onChange={(e) => handleQueryChange(e.target.value)}

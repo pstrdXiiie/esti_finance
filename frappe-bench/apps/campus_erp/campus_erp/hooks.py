@@ -98,14 +98,14 @@ required_apps = ["frappe/erpnext", "frappe/hrms", "frappe/education"]
 # idempotent, so safe to accumulate one entry per phase.
 
 after_migrate = [
-	"campus_erp.setup.custom_fields.sync_registrar_custom_fields",
-	"campus_erp.setup.custom_fields_finance.sync_finance_custom_fields",
-	"campus_erp.setup.custom_fields_personnel.sync_personnel_custom_fields",
-	"campus_erp.setup.custom_fields_asset.sync_asset_custom_fields",
-	"campus_erp.setup.library_defaults.sync_library_settings_defaults",
-	"campus_erp.setup.custom_fields_administration.sync_administration_custom_fields",
-	"campus_erp.setup.workflows_administration.sync_administration_workflows",
-	"campus_erp.setup.credential_defaults.sync_credential_defaults",
+        "campus_erp.setup.custom_fields.sync_registrar_custom_fields",
+        "campus_erp.setup.custom_fields_finance.sync_finance_custom_fields",
+        "campus_erp.setup.custom_fields_personnel.sync_personnel_custom_fields",
+        "campus_erp.setup.custom_fields_asset.sync_asset_custom_fields",
+        "campus_erp.setup.library_defaults.sync_library_settings_defaults",
+        "campus_erp.setup.custom_fields_administration.sync_administration_custom_fields",
+        # "campus_erp.setup.workflows_administration.sync_administration_workflows",  # TODO: re-enable once Workflow States/Actions/Roles are set up
+        "campus_erp.setup.credential_defaults.sync_credential_defaults",
 ]
 
 # Integration Setup

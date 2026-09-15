@@ -17,6 +17,7 @@ import {
 import { frappe, getErrorMessage } from "@/lib/frappe"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import EmployeeSearch from "@/components/sms/EmployeeSearch"
 
 interface DepartmentRow {
   name: string
@@ -84,6 +85,7 @@ export default function DepartmentMaintenance() {
   const [isEditing, setIsEditing] = useState(false)
   const [findQuery, setFindQuery] = useState("")
   const [findOpen, setFindOpen] = useState(false)
+  const [headPickerOpen, setHeadPickerOpen] = useState(false)
 
   if (!initialized && departments.length > 0) {
     setInitialized(true)
@@ -110,12 +112,14 @@ export default function DepartmentMaintenance() {
     setSyncedName(undefined)
     setForm(BLANK_FORM)
     setIsEditing(true)
+    setHeadPickerOpen(false)
   }
 
   function handleEdit() {
     if (!selected) return
     setForm(docToForm(selected))
     setIsEditing(true)
+    setHeadPickerOpen(false)
   }
 
   function handleCancel() {
@@ -125,6 +129,7 @@ export default function DepartmentMaintenance() {
       setForm(BLANK_FORM)
     }
     setIsEditing(false)
+    setHeadPickerOpen(false)
   }
 
   function selectRecord(idx: number) {
@@ -294,12 +299,39 @@ export default function DepartmentMaintenance() {
           />
         </Field>
         <Field id="dept-head" label="Head">
-          <Input
-            id="dept-head"
-            value={form.head}
-            disabled={!isEditing}
-            onChange={(e) => setForm((prev) => ({ ...prev, head: e.target.value }))}
-          />
+          <div className="relative flex flex-col gap-2">
+            <div className="flex gap-2 items-center">
+              <Input
+                id="dept-head"
+                value={form.head}
+                disabled={!isEditing}
+                onChange={(e) => setForm((prev) => ({ ...prev, head: e.target.value }))}
+              />
+              {isEditing && (
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  aria-label="Search employee"
+                  onClick={() => setHeadPickerOpen((prev) => !prev)}
+                >
+                  <SearchIcon />
+                </Button>
+              )}
+            </div>
+            {headPickerOpen && isEditing && (
+              <EmployeeSearch
+                idPrefix="dept-head"
+                selected={null}
+                onSelect={(option) => {
+                  if (option) {
+                    setForm((prev) => ({ ...prev, head: `${option.first_name} ${option.last_name}` }))
+                  }
+                  setHeadPickerOpen(false)
+                }}
+              />
+            )}
+          </div>
         </Field>
       </div>
 
