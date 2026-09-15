@@ -147,7 +147,6 @@ export const transcriptSpec: EntrySpec = {
   ],
 }
 
-
 export const curriculumSpec: EntrySpec = {
   doctype: "SMS Curriculum",
   title: "Curriculum",
@@ -194,3 +193,4 @@ export const studentcredentialSpec: FormSpec = {
   ],
 }
 
+// >>>>>>> 55b6bdb (Add Official Transcript of Records layout and Edit Student quick actions)
