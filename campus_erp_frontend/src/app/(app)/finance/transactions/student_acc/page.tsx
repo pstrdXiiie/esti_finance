@@ -19,14 +19,9 @@ function StudentAccountsListPageInner() {
 }
 
 export default function StudentAccountsListPage() {
-<<<<<<< HEAD
   return (
     <Suspense fallback={null}>
       <StudentAccountsListPageInner />
     </Suspense>
   )
 }
-=======
-  return <FinanceEntryListScreen spec={studentAccountSpec} formDisplay="inline" allowCreate={false} />
-}
->>>>>>> bd92b2d (updated finance maintenance)

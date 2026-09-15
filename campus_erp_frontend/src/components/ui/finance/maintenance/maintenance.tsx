@@ -34,9 +34,6 @@ export const finance_maintenance = () => {
             <TabsTrigger value="discounts" className="w-full gap-2 p-3 border-border data-active:bg-primary data-active:text-primary-foreground">
                 Discounts
             </TabsTrigger>
-<<<<<<< HEAD
-          
-=======
             <TabsTrigger value="sundry-account" className="w-full gap-2 p-3 border-border data-active:bg-primary data-active:text-primary-foreground">
                 Sundry Account
             </TabsTrigger>
@@ -52,7 +49,6 @@ export const finance_maintenance = () => {
             <TabsTrigger value="canteen-entry" className="w-full gap-2 p-3 border-border data-active:bg-primary data-active:text-primary-foreground">
                 Canteen Entry
             </TabsTrigger>
->>>>>>> bd92b2d (updated finance maintenance)
         </TabsList>
         <TabsContent value="subsidiary" className="mt-0 min-w-0 flex-1">
           <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-border">

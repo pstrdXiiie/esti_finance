@@ -211,7 +211,7 @@ export const assessmentSpec: EntrySpec = {
           doctype: "Program Enrollment",
           linkField: "student",
           orderBy: "enrollment_date",
-<<<<<<< HEAD
+
           // "name" is always fetched regardless of this mapping (see
           // DynamicField.tsx's applyAutofill) — mapping it here fills in
           // program_enrollment with the actual record id, instead of
@@ -220,9 +220,10 @@ export const assessmentSpec: EntrySpec = {
           // something recognizable like a Program code there is exactly
           // what threw "Could not find Program Enrollment: BSIS").
           fields: { name: "program_enrollment", program: "program", academic_year: "school_year" },
-=======
+
           fields: { program: "program", academic_year: "school_year" },
->>>>>>> bd92b2d (updated finance maintenance)
+
+
         },
       },
     },
@@ -535,7 +536,7 @@ export const sundryaccSearch: FormSpec = {
   ],
 };
 
-<<<<<<< HEAD
+
 export const cashReceipt: FormSpec = {
   doctype: "SMS Payment and Cash Receipt Entry",
   title: "Cash Receipt Transaction",
@@ -705,6 +706,3 @@ export const cashReceipt: FormSpec = {
     },
   ],
 };
-
-=======
->>>>>>> bd92b2d (updated finance maintenance)

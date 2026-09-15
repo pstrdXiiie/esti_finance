@@ -15,11 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-<<<<<<< HEAD
 import StudentSearch, { StudentOption, studentDisplayName } from "@/components/sms/StudentSearch"
-=======
-import StudentSearch, { StudentOption } from "@/components/sms/StudentSearch"
->>>>>>> bd92b2d (updated finance maintenance)
 import { FinancePropertySection } from "@/components/finance/FinancePropertyPanel"
 import { FinanceRecordTable, type FinanceRecordColumn } from "@/components/sms/FinanceRecordTable"
 
@@ -314,11 +310,7 @@ export default function PaymentsCashReceipt({
             <div className="text-sm font-medium">{student.stdnt_cno ?? "—"}</div>
           </Field>
           <Field label="Full Name">
-<<<<<<< HEAD
             <div className="text-sm font-medium">{studentDisplayName(student)}</div>
-=======
-            <div className="text-sm font-medium">{student.student_name}</div>
->>>>>>> bd92b2d (updated finance maintenance)
           </Field>
           <Field label="Course">
             <div className="text-sm font-medium">
@@ -454,11 +446,7 @@ export default function PaymentsCashReceipt({
         </div>
       </div>
 
-<<<<<<< HEAD
       <FinancePropertySection title={student ? `Recent Payments — ${studentDisplayName(student)}` : "Recent Payments"}>
-=======
-      <FinancePropertySection title={student ? `Recent Payments — ${student.student_name}` : "Recent Payments"}>
->>>>>>> bd92b2d (updated finance maintenance)
         <FinanceRecordTable
           columns={recentPaymentColumns}
           rows={recentPayments}
