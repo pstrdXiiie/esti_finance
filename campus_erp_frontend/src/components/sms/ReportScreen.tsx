@@ -25,9 +25,20 @@ import { Skeleton } from "@/components/ui/skeleton"
  * and subtotal logic that Crystal computed automatically must be reproduced
  * server-side in the backing report's get_data (blueprint §4.5) — this
  * component only renders whatever rows/columns the server returns.
+ *
+ * Totals footer (added for legacy screens with a bottom "Totals" panel,
+ * e.g. Summary of Assessment's Assessment/Dues, Collection, Receivables):
+ * backward compatible — if spec.totals is unset, or the method returns a
+ * bare array (every pre-existing report), behavior is identical to before.
+ * Only when spec.totals is set AND the response is a { rows, totals }
+ * object does the footer render.
  */
+type ReportRow = Record<string, unknown>
+type ReportResponse = ReportRow[] | { rows: ReportRow[]; totals?: Record<string, unknown> }
+
 export function ReportScreen({ spec }: { spec: ReportSpec }) {
-  const [rows, setRows] = useState<Array<Record<string, unknown>>>([])
+  const [rows, setRows] = useState<ReportRow[]>([])
+  const [totals, setTotals] = useState<Record<string, unknown> | null>(null)
   const form = useForm<Record<string, unknown>>({ defaultValues: {} })
 
   const runMutation = useMutation({
@@ -35,9 +46,17 @@ export function ReportScreen({ spec }: { spec: ReportSpec }) {
       if (!spec.method) {
         throw new Error(`ReportSpec for "${spec.title}" has no method configured yet`)
       }
-      return frappe.call<Array<Record<string, unknown>>>(spec.method, filters)
+      return frappe.call<ReportResponse>(spec.method, filters)
     },
-    onSuccess: (data) => setRows(data ?? []),
+    onSuccess: (data) => {
+      if (Array.isArray(data)) {
+        setRows(data)
+        setTotals(null)
+      } else {
+        setRows(data?.rows ?? [])
+        setTotals(data?.totals ?? null)
+      }
+    },
   })
 
   function exportCsv() {
@@ -45,7 +64,13 @@ export function ReportScreen({ spec }: { spec: ReportSpec }) {
     const body = rows
       .map((r) => spec.columns.map((c) => JSON.stringify(r[c.fieldname] ?? "")).join(","))
       .join("\n")
-    const blob = new Blob([`${header}\n${body}`], { type: "text/csv" })
+    const footer =
+      spec.totals && totals
+        ? spec.totals.map((t) => `${t.label},${JSON.stringify(totals[t.fieldname] ?? "")}`).join("\n")
+        : ""
+    const blob = new Blob([`${header}\n${body}${footer ? `\n\n${footer}` : ""}`], {
+      type: "text/csv",
+    })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
@@ -121,6 +146,21 @@ export function ReportScreen({ spec }: { spec: ReportSpec }) {
         <p className="text-muted-foreground text-sm">
           Set filters and run the report.
         </p>
+      )}
+
+      {spec.totals && totals && (
+        <div className="grid grid-cols-1 gap-4 rounded-md border bg-muted/30 p-4 sm:grid-cols-3">
+          {spec.totals.map((t) => (
+            <div key={t.fieldname} className="flex flex-col gap-1">
+              <span className="text-muted-foreground text-xs uppercase tracking-wide">
+                {t.label}
+              </span>
+              <span className="text-lg font-semibold">
+                {String(totals[t.fieldname] ?? "")}
+              </span>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   )

@@ -13,6 +13,8 @@ export const staticLabels: Record<string, string> = {
   // toTitleCase fix below.
   chartsofaccounts: "Charts of Accounts",
   financialreport: "Financial Report",
+  collection_for_the_period: "Collection for the Period",
+  assessment_for_the_period: "Assessment for the Period",
   sundry_acc: "Sundry Accounts",
   student_acc: "Student Accounts",
 }

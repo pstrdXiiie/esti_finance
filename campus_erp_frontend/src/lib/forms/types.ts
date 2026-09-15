@@ -131,6 +131,16 @@ export interface ReportSpec {
   title: string
   filters: FieldSpec[]
   columns: Array<{ fieldname: string; label: string; width?: number; fieldtype?: FieldType }>
+  /**
+   * Optional footer totals row - legacy screens like "Summary of Assessment"
+   * have a bottom panel of running totals (e.g. Assessment/Dues, Collection,
+   * Receivables) separate from the per-row grid. When set, the backing
+   * `method` must return `{ rows, totals }` instead of a bare row array —
+   * `totals` is a flat object keyed by each entry's `fieldname` here.
+   * Reports without this property keep returning a bare row array,
+   * unchanged (see ReportScreen for the backward-compatible handling).
+   */
+  totals?: Array<{ fieldname: string; label: string; fieldtype?: FieldType }>
 }
 
 export interface WizardStepSection {
