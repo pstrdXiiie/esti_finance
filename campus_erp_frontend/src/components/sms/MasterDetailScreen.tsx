@@ -51,12 +51,16 @@ import { Skeleton } from "@/components/ui/skeleton"
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Form } from "@/components/ui/form"
 import { WizardFormLayout } from "@/components/sms/WizardFormLayout"
 import { DynamicField } from "@/components/sms/DynamicField"
+import type { StudentOption } from "@/components/sms/StudentSearch"
+import { OfficialTranscriptOfRecords } from "@/components/ui/registrar/reports/student-credentials/official-transcript-of-records"
+import { StudentGrades } from "@/components/ui/registrar/grades/student-grades/student-grades"
 
 const PAGE_SIZE = 10
 
@@ -138,6 +142,8 @@ export function MasterDetailScreen({ spec }: { spec: FormSpec & { wizard?: Wizar
   const queryClient = useQueryClient()
   const [editing, setEditing] = useState<Record<string, unknown> | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [transcriptOpen, setTranscriptOpen] = useState(false)
+  const [gradesOpen, setGradesOpen] = useState(false)
   const [relatedRecordName, setRelatedRecordName] = useState<string | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [search, setSearch] = useState("")
@@ -460,6 +466,17 @@ export function MasterDetailScreen({ spec }: { spec: FormSpec & { wizard?: Wizar
     form.reset({ ...row, ...relatedValues })
   }
 
+  // Only the Student screen gets a Transcript of Records shortcut — this
+  // component serves ~115 other doctypes that have no such record.
+  const editingStudent: StudentOption | null =
+    spec.doctype === "Student" && editing
+      ? {
+          name: String(editing.name),
+          student_name: String(editing.student_name ?? ""),
+          stdnt_cno: (editing.stdnt_cno as string | null | undefined) ?? null,
+        }
+      : null
+
   return (
     <div className="grid gap-4">
       <div className="flex items-center justify-between">
@@ -693,7 +710,11 @@ export function MasterDetailScreen({ spec }: { spec: FormSpec & { wizard?: Wizar
             // sm: variant (twMerge only dedupes same-variant conflicts), so
             // the override must carry a matching `sm:` prefix to actually
             // take effect at any real viewport width.
-            "w-full max-h-[85vh] overflow-y-auto max-w-2xl sm:max-w-3xl",
+            // flex-col + the inner div's own overflow-y-auto (rather than
+            // this whole popup scrolling as one block) is what keeps the
+            // Save/Transcript of Records footer pinned in view instead of
+            // scrolling away with a long field list.
+            "flex w-full max-h-[85vh] flex-col overflow-hidden max-w-2xl sm:max-w-3xl",
             wizard && "sm:max-w-4xl"
           )}
         >
@@ -707,49 +728,89 @@ export function MasterDetailScreen({ spec }: { spec: FormSpec & { wizard?: Wizar
               onSubmit={form.handleSubmit((values) =>
                 saveMutation.mutate(values)
               )}
-              className="grid gap-6"
+              className="flex min-h-0 flex-1 flex-col gap-4"
             >
-              {wizard ? (
-                <WizardFormLayout spec={spec} layout={wizard} control={form.control} />
-              ) : (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  {groupFieldsBySection(dialogFields).map((group, idx) =>
-                    group.section ? (
-                      <div
-                        key={group.section}
-                        className="relative rounded-md border p-3 pt-4 sm:col-span-2"
-                      >
-                        <span className="absolute -top-2.5 left-3 bg-card px-1 text-xs font-medium">
-                          {group.section}
-                        </span>
-                        {group.section === spec.relatedRecord?.section && !relatedRecordName && (
-                          <p className="mb-2 text-xs text-muted-foreground">
-                            {spec.relatedRecord.missingRecordHint}
-                          </p>
-                        )}
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+                {wizard ? (
+                  <WizardFormLayout spec={spec} layout={wizard} control={form.control} />
+                ) : (
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    {groupFieldsBySection(dialogFields).map((group, idx) =>
+                      group.section ? (
+                        <div
+                          key={group.section}
+                          className="relative rounded-md border p-3 pt-4 sm:col-span-2"
+                        >
+                          <span className="absolute -top-2.5 left-3 bg-card px-1 text-xs font-medium">
+                            {group.section}
+                          </span>
+                          {group.section === spec.relatedRecord?.section && !relatedRecordName && (
+                            <p className="mb-2 text-xs text-muted-foreground">
+                              {spec.relatedRecord.missingRecordHint}
+                            </p>
+                          )}
+                          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            {group.fields.map((f) => (
+                              <DynamicField key={f.fieldname} control={form.control} spec={f} />
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div key={`ungrouped-${idx}`} className="contents">
                           {group.fields.map((f) => (
                             <DynamicField key={f.fieldname} control={form.control} spec={f} />
                           ))}
                         </div>
-                      </div>
-                    ) : (
-                      <div key={`ungrouped-${idx}`} className="contents">
-                        {group.fields.map((f) => (
-                          <DynamicField key={f.fieldname} control={form.control} spec={f} />
-                        ))}
-                      </div>
-                    )
-                  )}
-                </div>
-              )}
-              <Button type="submit" disabled={saveMutation.isPending}>
-                {saveMutation.isPending ? "Saving…" : "Save"}
-              </Button>
+                      )
+                    )}
+                  </div>
+                )}
+              </div>
+              <DialogFooter>
+                {editingStudent && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setDialogOpen(false)
+                      setTranscriptOpen(true)
+                    }}
+                  >
+                    Transcript of Records
+                  </Button>
+                )}
+                {editingStudent && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setDialogOpen(false)
+                      setGradesOpen(true)
+                    }}
+                  >
+                    Grades
+                  </Button>
+                )}
+                <Button type="submit" disabled={saveMutation.isPending}>
+                  {saveMutation.isPending ? "Saving…" : "Save"}
+                </Button>
+              </DialogFooter>
             </form>
           </Form>
         </DialogContent>
       </Dialog>
+
+      {spec.doctype === "Student" && (
+        <OfficialTranscriptOfRecords
+          open={transcriptOpen}
+          onOpenChange={setTranscriptOpen}
+          initialStudent={editingStudent}
+        />
+      )}
+
+      {spec.doctype === "Student" && (
+        <StudentGrades open={gradesOpen} onOpenChange={setGradesOpen} student={editingStudent} />
+      )}
 
       {selected.size > 0 && (
         <div className="pointer-events-none fixed inset-x-0 bottom-6 z-50 flex justify-center">

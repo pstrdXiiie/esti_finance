@@ -103,3 +103,40 @@ export const permitSpec: EntrySpec = {
     ],
   },
 }
+
+/**
+ * "Request for Official Transcript of Records" (Registrar > Reports > Student
+ * Credentials) — a create-only intake form: every Print creates one new SMS
+ * Transcript record (naming series TOR-.YY.-.##), it never loads/edits an
+ * existing one, so this spec lists only the fields that are actually
+ * editable on that screen. Student No/Name/Course and the whole Educational
+ * Data block are persistent Student facts edited elsewhere in the app (see
+ * studentSpec) and are shown read-only there instead of being part of this
+ * doctype's own editable field list. The `subjects` child table (grade rows)
+ * is likewise out of scope — the legacy form this mirrors is a request slip,
+ * not a grade sheet.
+ */
+export const transcriptSpec: EntrySpec = {
+  doctype: "SMS Transcript",
+  title: "Official Transcript of Records",
+  fields: [
+    { fieldname: "student", label: "Student", fieldtype: "Link", options: "Student", required: true },
+    { fieldname: "is_graduated", label: "Graduated", fieldtype: "Check" },
+    { fieldname: "date_graduated", label: "Date Graduated", fieldtype: "Date" },
+    { fieldname: "honors", label: "Honors/Distinction", fieldtype: "Data" },
+    { fieldname: "is_transferee", label: "Check if Transferee", fieldtype: "Check" },
+    { fieldname: "issued_to", label: "Official TOR Issued To", fieldtype: "Data" },
+    { fieldname: "entrance_credentials", label: "Entrance Credentials To", fieldtype: "Data" },
+    { fieldname: "status_of_admission", label: "Status of Admission", fieldtype: "Data" },
+    { fieldname: "date_of_admission", label: "Date of Admission", fieldtype: "Date" },
+    { fieldname: "date_of_transfer", label: "Transfer Date", fieldtype: "Date" },
+    { fieldname: "so_no", label: "Special Order No.", fieldtype: "Data" },
+    { fieldname: "date_issued", label: "Date Issued", fieldtype: "Date" },
+    { fieldname: "or_no", label: "OR No.", fieldtype: "Data" },
+    { fieldname: "remarks", label: "Remarks", fieldtype: "Small Text" },
+    { fieldname: "attachments", label: "Attachments (If any)", fieldtype: "Small Text" },
+    { fieldname: "prepared_by", label: "Prepared by", fieldtype: "Link", options: "User" },
+    { fieldname: "checked_by", label: "Checked by", fieldtype: "Link", options: "User" },
+    { fieldname: "registrar", label: "Registrar", fieldtype: "Link", options: "User" },
+  ],
+}
