@@ -103,6 +103,19 @@ export interface FormSpec {
     missingRecordHint: string
     fields: FieldSpec[]
   }
+  /**
+   * Small navigation shortcuts to a related record's own screen in another
+   * module, shown once an existing record is loaded for editing (e.g. a
+   * Student's edit dialog linking over to their Finance > Student Account
+   * screen, and vice versa) — rendered generically by MasterDetailScreen
+   * and FinanceEntryScreen, both of which already have the full row/doc in
+   * hand at that point. `hrefFor` returns null to hide the link (e.g. a
+   * related Link field that's empty), not to break navigation.
+   */
+  quickLinks?: Array<{
+    label: string
+    hrefFor: (row: Record<string, unknown>) => string | null
+  }>
 }
 
 export interface ChildTableSpec {

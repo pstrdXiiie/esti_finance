@@ -22,7 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { StudentOption } from "@/components/sms/StudentSearch"
+import { StudentOption, studentDisplayName } from "@/components/sms/StudentSearch"
 
 interface MiscItem {
   particular: string
@@ -306,7 +306,7 @@ export default function AssessmentDialog({
                   <div className="text-sm font-medium">{student.stdnt_cno || "—"}</div>
                 </Field>
                 <Field label="Student Name">
-                  <div className="text-sm font-medium">{student.student_name}</div>
+                  <div className="text-sm font-medium">{studentDisplayName(student)}</div>
                 </Field>
                 <Field label="Program">
                   <div className="text-sm font-medium">{program}</div>

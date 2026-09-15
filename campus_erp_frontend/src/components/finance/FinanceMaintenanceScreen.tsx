@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, type ReactNode } from "react"
 import { useForm } from "react-hook-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
@@ -54,8 +54,19 @@ type Mode = "view" | "edit" | "add"
  * pressed. Meant for FinanceMaintenancePage's sidebar-switched screens;
  * FinanceEntryListScreen (list+inline-form) stays the pattern for finance
  * screens reached directly from the main sidebar.
+ *
+ * `extra` is an optional slot for doctype-specific actions that depend on
+ * the currently selected record (e.g. Purchase Requisition's Submit /
+ * Create Purchase Order(s) buttons) — rendered below the fieldset, only
+ * while viewing (not while adding/editing) a saved record.
  */
-export function FinanceMaintenanceScreen({ spec }: { spec: EntrySpec }) {
+export function FinanceMaintenanceScreen({
+  spec,
+  extra,
+}: {
+  spec: EntrySpec
+  extra?: (doc: Record<string, unknown> | null, mode: Mode) => ReactNode
+}) {
   const queryClient = useQueryClient()
 
   const listQuery = useQuery({
@@ -126,7 +137,7 @@ export function FinanceMaintenanceScreen({ spec }: { spec: EntrySpec }) {
     } else {
       form.reset({})
       setRows([])
-      setMode(records.length > 0 ? "view" : "add")
+      setMode("view")
     }
   }
 
@@ -188,7 +199,7 @@ export function FinanceMaintenanceScreen({ spec }: { spec: EntrySpec }) {
         <Button type="button" onClick={handleAdd} disabled={mode === "add"}>
           <PlusIcon /> Add
         </Button>
-        <Button type="button" variant="outline" disabled={!selected || mode !== "view"} onClick={handleEdit}>
+        <Button type="button" variant="outline" disabled={!selected || mode !=="view"} onClick={handleEdit}>
           <PencilIcon /> Edit
         </Button>
         <Button
@@ -242,6 +253,12 @@ export function FinanceMaintenanceScreen({ spec }: { spec: EntrySpec }) {
               </FinancePropertySection>
             ))}
         </fieldset>
+      )}
+
+      {extra && mode === "view" && (
+        <div className="border-t border-border pt-4">
+          {extra(fullDoc ?? null, mode)}
+        </div>
       )}
 
       <div className="flex items-center justify-between border-t border-border pt-4">

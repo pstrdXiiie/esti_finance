@@ -26,6 +26,12 @@ export const studentSpec: FormSpec = {
     "SMS Transferee Grade",
   ],
   cancelAndDeleteDoctypes: ["SMS Student Assessment", "Payment Entry"],
+  quickLinks: [
+    {
+      label: "View Student Account",
+      hrefFor: (row) => `/finance/transactions/student_acc?q=${encodeURIComponent(String(row.name))}`,
+    },
+  ],
   fields: [
     { fieldname: "student_name", label: "Student Name", fieldtype: "Data", readOnly: true, inListView: true, section: "Personal Information" },
     { fieldname: "first_name", label: "First Name", fieldtype: "Data", required: true, inListView: true, section: "Personal Information" },

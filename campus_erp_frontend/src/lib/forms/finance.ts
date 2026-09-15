@@ -13,14 +13,24 @@ import type { EntrySpec, FormSpec } from "@/lib/forms/types"
 export const studentAccountSpec: EntrySpec = {
   doctype: "SMS Student Account",
   title: "Student Account",
+  quickLinks: [
+    {
+      label: "View Student",
+      hrefFor: (row) =>
+        row.stud_num ? `/registrar/students?q=${encodeURIComponent(String(row.stud_num))}` : null,
+    },
+  ],
   fields: [
     {
       fieldname: "stud_num",
       label: "Student",
       fieldtype: "Link",
+      // Real doctype is "Student" (Education/Registrar) — "SMS Student"
+      // doesn't exist anywhere in the backend; a Link pointed at it can't
+      // resolve or search at all.
       options: "Student",
       dropdown: true,
-      linkLabelFields: ["student_name",],
+      linkLabelFields: ["first_name", "middle_name", "last_name"],
       inListView: true,
       section: "Account Details",
     },
@@ -105,7 +115,14 @@ export const assessmentSpec: EntrySpec = {
           doctype: "Program Enrollment",
           linkField: "student",
           orderBy: "enrollment_date",
-          fields: { program: "program", academic_year: "school_year" },
+          // "name" is always fetched regardless of this mapping (see
+          // DynamicField.tsx's applyAutofill) — mapping it here fills in
+          // program_enrollment with the actual record id, instead of
+          // leaving that Link field for a human to guess at (nobody can
+          // type Program Enrollment's own opaque autoname by hand; typing
+          // something recognizable like a Program code there is exactly
+          // what threw "Could not find Program Enrollment: BSIS").
+          fields: { name: "program_enrollment", program: "program", academic_year: "school_year" },
         },
       },
     },
@@ -116,8 +133,10 @@ export const assessmentSpec: EntrySpec = {
       fieldtype: "Link",
       options: "Program Enrollment",
       required: true,
+      readOnly: true,
+      description: "Auto-filled from the selected Student's latest Program Enrollment",
     },
-    { fieldname: "program", label: "Program", fieldtype: "Link", options: "Program" },
+    { fieldname: "program", label: "Program", fieldtype: "Link", options: "Program", readOnly: true },
     { fieldname: "company", label: "Company", fieldtype: "Link", options: "Company", required: true },
     { fieldname: "currency", label: "Currency", fieldtype: "Link", options: "Currency" },
     { fieldname: "school_year", label: "School Year", fieldtype: "Data", required: true },

@@ -2,12 +2,13 @@
 
 import { useState, type ReactNode } from "react"
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Pencil, Printer, Trash2 } from "lucide-react"
+import { Pencil, Plus, Printer, Search, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 import { frappe, getErrorMessage } from "@/lib/frappe"
 import type { EntrySpec } from "@/lib/forms/types"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
   Table,
   TableBody,
@@ -45,6 +46,12 @@ import { FinanceEntryScreen } from "@/components/finance/FinanceEntryScreen"
  * that should show the form embedded above the table instead (Student
  * Accounts, Purchase Order, Purchase Requisition).
  *
+ * cardStyle is a purely visual opt-in (default false, so every existing
+ * consumer is unchanged): swaps the outer wrapper and toolbar row for the
+ * rounded-2xl card shell + bottom-border toolbar used by the bespoke
+ * Curriculum Offered screen, and adds a leading icon to the Add button.
+ * No behavior changes — same data flow, same dialog/inline form logic.
+ *
  * If spec has a "root_type" field, a Root Type filter dropdown is rendered
  * above the table (driven by that field's options string), and a Print
  * button becomes available that renders ALL records (ignoring the active
@@ -59,6 +66,8 @@ export function FinanceEntryListScreen({
   renderExtra,
   formDisplay = "dialog",
   allowCreate = true,
+  initialSearch,
+  cardStyle = false,
 }: {
   spec: EntrySpec
   /** Extra content rendered below the form, only when editing an existing record. */
@@ -67,12 +76,17 @@ export function FinanceEntryListScreen({
   formDisplay?: "dialog" | "inline"
   /** false hides "Add {title}" and disables creating new records — read/edit/delete only (e.g. Student Accounts). */
   allowCreate?: boolean
+  /** Seeds the search box, e.g. from a `?q=` link in from another module's quickLinks. */
+  initialSearch?: string
+  /** Purely visual opt-in: rounded-2xl card shell + bordered toolbar matching Curriculum Offered. Default false leaves existing consumers unchanged. */
+  cardStyle?: boolean
 }) {
   const queryClient = useQueryClient()
   const [deleteTarget, setDeleteTarget] = useState<Record<string, unknown> | null>(null)
   const [activeName, setActiveName] = useState<string | undefined>(undefined)
   const [formOpen, setFormOpen] = useState(false)
   const [rootTypeFilter, setRootTypeFilter] = useState<string>("all")
+  const [search, setSearch] = useState(initialSearch ?? "")
 
   const listColumns = spec.fields.filter((f) => f.inListView)
   const columns = listColumns.length ? listColumns : spec.fields.slice(0, 4)
@@ -97,7 +111,7 @@ const linkLabelMaps = linkColumns.reduce<Record<string, Record<string, string>>>
   acc[c.fieldname] = Object.fromEntries(
     rows.map((r) => [
       r.name,
-      (c.linkLabelFields ?? []).map((f) => r[f]).filter(Boolean).join(" ") || r.name,
+      (c.linkLabelFields ?? []).map((f) => r[f]).filter(Boolean).join("") || r.name,
     ])
   )
   return acc
@@ -128,6 +142,16 @@ function formatCell(c: (typeof columns)[number], row: Record<string, unknown>): 
         limit_page_length: 100,
       }),
   })
+
+  // Client-side, across raw field values — matches EntryListScreen's own
+  // search, and (deliberately) filters on the raw stored value rather than
+  // formatCell's resolved Link label, so a quickLinks-driven `?q=<name>`
+  // from another module's own record id lines up exactly.
+  const filteredData = (data ?? []).filter(
+    (row) =>
+      !search.trim() ||
+      columns.some((c) => String(row[c.fieldname] ?? "").toLowerCase().includes(search.trim().toLowerCase()))
+  )
 
   // Always unfiltered, regardless of the on-screen Root Type filter above —
   // "Print" means the full chart, grouped by type, not just what's currently
@@ -196,8 +220,20 @@ function formatCell(c: (typeof columns)[number], row: Record<string, unknown>): 
   const inline = formDisplay === "inline"
 
   return (
-    <div className="grid gap-4">
-      <div className="print-hide flex items-center justify-between">
+    <div
+      className={
+        cardStyle
+          ? "rounded-2xl border border-border h-full p-6 flex flex-col gap-5 overflow-y-auto"
+          : "grid gap-4"
+      }
+    >
+      <div
+        className={
+          cardStyle
+            ? "print-hide flex flex-wrap items-center justify-between gap-2 border-b border-border pb-4"
+            : "print-hide flex items-center justify-between"
+        }
+      >
         <h1 className="text-2xl font-semibold">{spec.title}</h1>
         <div className="flex items-center gap-2">
           {rootTypeOptions.length > 0 && (
@@ -228,8 +264,23 @@ function formatCell(c: (typeof columns)[number], row: Record<string, unknown>): 
               </Button>
             </>
           )}
-          {allowCreate && !(inline && formOpen) && <Button onClick={openNew}>Add {spec.title}</Button>}
+          {allowCreate && !(inline && formOpen) && (
+            <Button onClick={openNew}>
+              {cardStyle && <Plus className="h-4 w-4" />}
+              Add {spec.title}
+            </Button>
+          )}
         </div>
+      </div>
+
+      <div className="print-hide relative max-w-sm">
+        <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder={`Search ${spec.title.toLowerCase()}…`}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-8"
+        />
       </div>
 
       {/* Inline form panel — embedded on the same page, above the table. */}
@@ -264,7 +315,7 @@ function formatCell(c: (typeof columns)[number], row: Record<string, unknown>): 
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(data ?? []).map((row) => (
+              {filteredData.map((row) => (
                 <TableRow key={String(row.name)}>
                   {columns.map((c, i) => (
                     <TableCell key={c.fieldname}>
@@ -303,10 +354,10 @@ function formatCell(c: (typeof columns)[number], row: Record<string, unknown>): 
                   </TableCell>
                 </TableRow>
               ))}
-              {(data ?? []).length === 0 && (
+              {filteredData.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={columns.length + 1} className="text-muted-foreground text-center">
-                    No records yet.
+                    {search.trim() ? "No matching records." : "No records yet."}
                   </TableCell>
                 </TableRow>
               )}
@@ -358,7 +409,7 @@ function formatCell(c: (typeof columns)[number], row: Record<string, unknown>): 
             className="max-h-[90vh] w-fit max-w-[calc(100%-2rem)] overflow-y-auto border-none bg-transparent p-0 shadow-none ring-0 sm:max-w-2xl"
           >
             <DialogTitle className="sr-only">
-              {activeName ? `Edit ${spec.title} — ${activeName}` : `New ${spec.title}`}
+              {activeName ? `Edit ${spec.title} — ${activeName}` : `New${spec.title}`}
             </DialogTitle>
             <FinanceEntryScreen
               spec={spec}

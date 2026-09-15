@@ -315,11 +315,8 @@ export default function NewStudentPage() {
   const credentialTypes = credentialsQuery.data ?? []
 
   const studentNumberPreviewQuery = useQuery({
-    queryKey: ["student-number-preview", academicInfo.transferee],
-    queryFn: () =>
-      frappe.call<string>("campus_erp.registrar.student_number.preview_student_number", {
-        transferee: academicInfo.transferee ? 1 : 0,
-      }),
+    queryKey: ["student-number-preview"],
+    queryFn: () => frappe.call<string>("campus_erp.utils.student.preview_student_control_number"),
   })
 
   const toggleCredentialChecked = (credentialName: string) => {

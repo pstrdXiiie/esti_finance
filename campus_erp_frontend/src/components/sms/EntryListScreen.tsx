@@ -18,19 +18,34 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 
 /**
  * List view for EntryScreen-backed doctypes (SMS Curriculum, SMS Permit, …):
  * rows link to a full detail page instead of opening a modal, since entry
  * documents carry a child-table grid that needs more room than a dialog.
+ *
+ * cardStyle is a purely visual opt-in (default false, so every existing
+ * consumer is unchanged): swaps the outer wrapper and header row for the
+ * rounded-2xl card shell + bottom-border toolbar used by the bespoke
+ * Curriculum Offered screen, and adds a leading icon to the Add button.
+ * No behavior changes — same data flow, same routing/inlineAdd logic.
  */
 export function EntryListScreen({
   spec,
   basePath,
+  inlineAdd = false,
+  filters,
+  cardStyle = false,
 }: {
   spec: EntrySpec
   basePath: string
+  /** When true, "Add" opens an inline panel above the table instead ofnavigating to a new route. */
+  inlineAdd?: boolean
+  /** Server-side filters applied to the list query, e.g. excluding cancelled records. */
+  filters?: Array<[string, string, unknown]>
+  /** Purely visual opt-in: rounded-2xl card shell + bordered toolbar matching Curriculum Offered. Default false leaves existing consumers unchanged. */
+  cardStyle?: boolean
 }) {
   const queryClient = useQueryClient()
   const [showAddPanel, setShowAddPanel] = useState(false)
@@ -55,22 +70,32 @@ export function EntryListScreen({
       )
   )
 
-  {filteredData.length === 0 && (
-    <TableCell colSpan={columns.length} className="text-muted-foreground text-center">
-      {search.trim() ? "No matching records." : "No records yet."}
-    </TableCell>
-  )}
-
   return (
-    <div className="grid gap-4">
-      <div className="flex items-center justify-between">
+    <div
+      className={
+        cardStyle
+          ? "rounded-2xl border border-border h-full p-6 flex flex-col gap-5 overflow-y-auto"
+          : "grid gap-4"
+      }
+    >
+      <div
+        className={
+          cardStyle
+            ? "flex flex-wrap items-center justify-between gap-2 border-b border-border pb-4"
+            : "flex items-center justify-between"
+        }
+      >
         <h1 className="text-2xl font-semibold">{spec.title}</h1>
         {inlineAdd ? (
           <Button onClick={() => setShowAddPanel((v) => !v)}>
+            {cardStyle && !showAddPanel && <Plus className="h-4 w-4" />}
             {showAddPanel ? "Cancel" : `Add ${spec.title}`}
           </Button>
         ) : (
-          <Button render={<Link href={`${basePath}/new`} />} nativeButton={false}>Add {spec.title}</Button>
+          <Button render={<Link href={`${basePath}/new`} />} nativeButton={false}>
+            {cardStyle && <Plus className="h-4 w-4" />}
+            Add {spec.title}
+          </Button>
         )}
       </div>
 
@@ -108,7 +133,7 @@ export function EntryListScreen({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(data ?? []).map((row) => (
+              {filteredData.map((row) => (
                 <TableRow key={String(row.name)}>
                   {columns.map((c, i) => (
                     <TableCell key={c.fieldname}>
@@ -126,10 +151,10 @@ export function EntryListScreen({
                   ))}
                 </TableRow>
               ))}
-              {(data ?? []).length === 0 && (
+              {filteredData.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={columns.length} className="text-muted-foreground text-center">
-                    No records yet.
+                    {search.trim() ? "No matching records." : "No records yet."}
                   </TableCell>
                 </TableRow>
               )}

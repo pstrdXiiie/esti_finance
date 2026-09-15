@@ -14,11 +14,15 @@ export interface StudentOption {
   stdnt_cno: string | null
 }
 
+export function studentDisplayName(s: StudentOption): string {
+  return s.student_name
+}
+
 /**
  * Shared "find a student" control for the enrollment tabs (Pre-Enrollment,
  * Add/Remove Subjects, Withdrawal of Enrollment) — replaces each tab's
- * previously-duplicated exact-control-number search with one component that
- * matches on control number OR name (via `frappe.list`'s `or_filters`) and,
+ * previously-duplicated exact-control-number search with one componentthat
+ * matches on control number OR name (via `frappe.list`'s `or_filters`)and,
  * unlike the old per-tab copies, lets the registrar clear a resolved student
  * and search again without reloading the tab.
  *
@@ -109,7 +113,7 @@ export default function StudentSearch({
     return (
       <div className="flex gap-2 items-center">
         <span>
-          {selected.student_name}
+          {studentDisplayName(selected)}
           {selected.stdnt_cno ? (
             <span className="text-muted-foreground"> ({selected.stdnt_cno})</span>
           ) : null}
@@ -171,7 +175,7 @@ export default function StudentSearch({
                 className="w-full justify-start rounded-md hover:bg-accent hover:text-accent-foreground"
                 onClick={() => onSelect(option)}
               >
-                {option.student_name}
+                {studentDisplayName(option)}
                 {option.stdnt_cno ? (
                   <span className="text-muted-foreground">
                     {" "}

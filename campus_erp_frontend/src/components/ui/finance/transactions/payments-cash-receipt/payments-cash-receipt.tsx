@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import StudentSearch, { StudentOption } from "@/components/sms/StudentSearch"
+import StudentSearch, { StudentOption, studentDisplayName } from "@/components/sms/StudentSearch"
 import { FinancePropertySection } from "@/components/finance/FinancePropertyPanel"
 import { FinanceRecordTable, type FinanceRecordColumn } from "@/components/sms/FinanceRecordTable"
 
@@ -310,7 +310,7 @@ export default function PaymentsCashReceipt({
             <div className="text-sm font-medium">{student.stdnt_cno ?? "—"}</div>
           </Field>
           <Field label="Full Name">
-            <div className="text-sm font-medium">{student.student_name}</div>
+            <div className="text-sm font-medium">{studentDisplayName(student)}</div>
           </Field>
           <Field label="Course">
             <div className="text-sm font-medium">
@@ -329,7 +329,7 @@ export default function PaymentsCashReceipt({
 
       {paymentMode === "assessment" && student && !assessmentsQuery.isFetching && assessments.length === 0 && (
         <div className="rounded-md border p-4 text-sm text-muted-foreground">
-          {student.student_name} has no assessment on record yet — prescribe classes and create an
+          {studentDisplayName(student)} has no assessment on record yet — prescribe classes and create an
           assessment first (Registrar &gt; Enrollment &gt; Pre-Enrollment).
         </div>
       )}
@@ -446,7 +446,7 @@ export default function PaymentsCashReceipt({
         </div>
       </div>
 
-      <FinancePropertySection title={student ? `Recent Payments — ${student.student_name}` : "Recent Payments"}>
+      <FinancePropertySection title={student ? `Recent Payments — ${studentDisplayName(student)}` : "Recent Payments"}>
         <FinanceRecordTable
           columns={recentPaymentColumns}
           rows={recentPayments}

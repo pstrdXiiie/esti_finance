@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, type ReactNode } from "react"
+import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
@@ -155,6 +156,20 @@ export function FinanceEntryScreen({
               <ChildTableGrid spec={spec.childTable} rows={rows} onChange={setRows} />
             </FinancePropertySection>
           ))}
+
+        {doc && spec.quickLinks && spec.quickLinks.length > 0 && (
+          <div className="flex flex-wrap gap-4 px-1">
+            {spec.quickLinks.map((ql) => {
+              const href = ql.hrefFor(doc)
+              if (!href) return null
+              return (
+                <Link key={ql.label} href={href} className="text-sm font-medium text-primary hover:underline">
+                  {ql.label} →
+                </Link>
+              )
+            })}
+          </div>
+        )}
 
         {extraActions && <FinancePropertySection title="Actions">{extraActions}</FinancePropertySection>}
       </FinancePropertyPanel>

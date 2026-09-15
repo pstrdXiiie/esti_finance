@@ -34,21 +34,7 @@ export const finance_maintenance = () => {
             <TabsTrigger value="discounts" className="w-full gap-2 p-3 border-border data-active:bg-primary data-active:text-primary-foreground">
                 Discounts
             </TabsTrigger>
-            <TabsTrigger value="sundry-account" className="w-full gap-2 p-3 border-border data-active:bg-primary data-active:text-primary-foreground">
-                Sundry Account
-            </TabsTrigger>
-            <TabsTrigger value="purchase-requisition" className="w-full gap-2 p-3 border-border data-active:bg-primary data-active:text-primary-foreground">
-                Purchase Requisition
-            </TabsTrigger>
-            <TabsTrigger value="purchase-order" className="w-full gap-2 p-3 border-border data-active:bg-primary data-active:text-primary-foreground">
-                Purchase Order
-            </TabsTrigger>
-            <TabsTrigger value="petty-cash-voucher" className="w-full gap-2 p-3 border-border data-active:bg-primary data-active:text-primary-foreground">
-                Petty Cash Voucher
-            </TabsTrigger>
-            <TabsTrigger value="canteen-entry" className="w-full gap-2 p-3 border-border data-active:bg-primary data-active:text-primary-foreground">
-                Canteen Entry
-            </TabsTrigger>
+          
         </TabsList>
         <TabsContent value="subsidiary" className="mt-0 min-w-0 flex-1">
           <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-border">

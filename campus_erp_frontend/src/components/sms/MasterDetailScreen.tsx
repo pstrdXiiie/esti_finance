@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -137,7 +138,14 @@ function findCascadeTarget(
  * The ~115 legacy Master/Detail screens (blueprint §5.1): a list view plus an
  * Add/Edit detail panel, backed by one Frappe DocType.
  */
-export function MasterDetailScreen({ spec }: { spec: FormSpec & { wizard?: WizardLayout } }) {
+export function MasterDetailScreen({
+  spec,
+  initialSearch,
+}: {
+  spec: FormSpec & { wizard?: WizardLayout }
+  /** Seeds the list's search box, e.g. from a `?q=` link in from another module's quickLinks. */
+  initialSearch?: string
+}) {
   const router = useRouter()
   const queryClient = useQueryClient()
   const [editing, setEditing] = useState<Record<string, unknown> | null>(null)
@@ -146,7 +154,7 @@ export function MasterDetailScreen({ spec }: { spec: FormSpec & { wizard?: Wizar
   const [gradesOpen, setGradesOpen] = useState(false)
   const [relatedRecordName, setRelatedRecordName] = useState<string | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
-  const [search, setSearch] = useState("")
+  const [search, setSearch] = useState(initialSearch ?? "")
   const [filterOpen, setFilterOpen] = useState(false)
   const [filterField, setFilterField] = useState<string>("")
   const [filterValue, setFilterValue] = useState("")
@@ -176,8 +184,14 @@ export function MasterDetailScreen({ spec }: { spec: FormSpec & { wizard?: Wizar
     if (search.trim()) {
       const needle = search.trim().toLowerCase()
       const haystack = searchableColumns.length ? searchableColumns : columns
-      rows = rows.filter((row) =>
-        haystack.some((c) => String(row[c.fieldname] ?? "").toLowerCase().includes(needle))
+      rows = rows.filter(
+        (row) =>
+          haystack.some((c) => String(row[c.fieldname] ?? "").toLowerCase().includes(needle)) ||
+          // Also match the record's own id — not shown as a column on most
+          // specs, but it's what a quickLinks `?q=` from another module
+          // passes (that module only has the raw Link value, not this
+          // doctype's own display columns to search by).
+          String(row.name ?? "").toLowerCase().includes(needle)
       )
     }
 
@@ -723,6 +737,19 @@ export function MasterDetailScreen({ spec }: { spec: FormSpec & { wizard?: Wizar
               {editing ? `Edit ${spec.title}` : `New ${spec.title}`}
             </DialogTitle>
           </DialogHeader>
+          {editing && spec.quickLinks && spec.quickLinks.length > 0 && (
+            <div className="-mt-2 flex flex-wrap gap-4">
+              {spec.quickLinks.map((ql) => {
+                const href = ql.hrefFor(editing)
+                if (!href) return null
+                return (
+                  <Link key={ql.label} href={href} className="text-sm font-medium text-primary hover:underline">
+                    {ql.label} →
+                  </Link>
+                )
+              })}
+            </div>
+          )}
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit((values) =>
