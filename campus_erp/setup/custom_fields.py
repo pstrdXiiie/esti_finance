@@ -95,6 +95,11 @@ CUSTOM_FIELDS = {
 			"description": "Replaces the legacy branch_code='02'-only hardcode", "insert_after": "lab"},
 		{"fieldname": "course_desc", "label": "Long Description", "fieldtype": "Text Editor", "insert_after": "is_nstp_or_ms"},
 	],
+	"Program Enrollment": [
+		{"fieldname": "curriculum", "label": "Curriculum", "fieldtype": "Link", "options": "SMS Curriculum",
+			"description": "Filtered to SMS Curriculum.course = Program", "insert_after": "academic_term"},
+		{"fieldname": "year_level", "label": "Year Level", "fieldtype": "Int", "insert_after": "curriculum"},
+	],
 	"Student Group": [
 		{"fieldname": "sms_schedule_section", "fieldtype": "Section Break", "label": "Schedule (PH Registrar)", "insert_after": "instructors"},
 		{"fieldname": "room", "label": "Room", "fieldtype": "Link", "options": "Room", "insert_after": "sms_schedule_section"},
@@ -164,6 +169,14 @@ CUSTOM_FIELDS = {
 		{"fieldname": "bg_front", "label": "Certificate Background (Front)", "fieldtype": "Attach Image", "insert_after": "column_break_sms_branch_1"},
 		{"fieldname": "bg_back", "label": "Certificate Background (Back)", "fieldtype": "Attach Image", "insert_after": "bg_front"},
 	],
+	"SMS Student": [
+		{"fieldname": "branch", "label": "Branch", "fieldtype": "Link", "options": "Branch", "insert_after": "status"},
+		{"fieldname": "scholarship", "label": "Scholarship", "fieldtype": "Link", "options": "SMS Code",
+			"description": "Filtered to SMS Code.code_type = Scholarship", "insert_after": "branch"},
+		{"fieldname": "discount_type", "label": "Discount Type", "fieldtype": "Link", "options": "SMS Code",
+			"description": "Filtered to SMS Code.code_type = Fee", "insert_after": "scholarship"},
+		{"fieldname": "signature", "label": "Signature", "fieldtype": "Attach Image", "insert_after": "discount_type"},
+	],
 }
 
 
@@ -176,6 +189,16 @@ def sync_registrar_property_setters():
 			"property": "options",
 			"value": "General\nAcademic\nMedical\nAchievement\nDisciplinary",
 			"property_type": "Text",
+		},
+		validate_fields_for_doctype=False,
+	)
+	frappe.make_property_setter(
+		{
+			"doctype": "Program Enrollment",
+			"fieldname": "student",
+			"property": "options",
+			"value": "SMS Student",
+			"property_type": "Link",
 		},
 		validate_fields_for_doctype=False,
 	)
