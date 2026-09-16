@@ -221,9 +221,6 @@ export const assessmentSpec: EntrySpec = {
           // what threw "Could not find Program Enrollment: BSIS").
           fields: { name: "program_enrollment", program: "program", academic_year: "school_year" },
 
-          fields: { program: "program", academic_year: "school_year" },
-
-
         },
       },
     },
@@ -535,7 +532,6 @@ export const sundryaccSearch: FormSpec = {
     },
   ],
 };
-
 
 export const cashReceipt: FormSpec = {
   doctype: "SMS Payment and Cash Receipt Entry",

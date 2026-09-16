@@ -409,7 +409,7 @@ export function FinanceEntryListScreen({
             className="max-h-[90vh] w-fit max-w-[calc(100%-2rem)] overflow-y-auto border-none bg-transparent p-0 shadow-none ring-0 sm:max-w-2xl"
           >
             <DialogTitle className="sr-only">
-              {activeName ? `Edit ${spec.title} — ${activeName}` : `New${spec.title}`}
+              {activeName ? `Edit ${spec.title} — ${activeName}` : `New ${spec.title}`}
             </DialogTitle>
             <FinanceEntryScreen
               spec={spec}

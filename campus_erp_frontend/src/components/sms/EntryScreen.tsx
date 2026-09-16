@@ -122,29 +122,14 @@ export function EntryScreen({
           onSubmit={form.handleSubmit((values) => saveMutation.mutate(values))}
           className="grid gap-6"
         >
-<<<<<<< HEAD
-          {spec.wizard ? (
-            <WizardFormLayout
-              spec={spec}
-              layout={spec.wizard}
-              control={form.control}
-              setValue={form.setValue as (name: string, value: unknown) => void}
-            />
-          ) : (
-=======
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {spec.fields.map((f) => (
-              <DynamicField
-                key={f.fieldname}
+            {spec.wizard ? (
+              <WizardFormLayout
+                spec={spec}
+                layout={spec.wizard}
                 control={form.control}
-                spec={f}
                 setValue={form.setValue as (name: string, value: unknown) => void}
               />
-            ))}
-          </div>
-
-          {spec.childTable && (
->>>>>>> bd92b2d (updated finance maintenance)
+            ) : (
             <>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {spec.fields.map((f) => (
