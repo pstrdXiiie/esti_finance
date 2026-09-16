@@ -1,7 +1,0 @@
-Administration
-Registrar
-Finance Billing
-Finance Purchasing
-Personnel
-Asset
-Library
