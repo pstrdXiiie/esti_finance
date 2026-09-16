@@ -28,17 +28,21 @@ function byNameMap(fields: FieldSpec[]) {
     return new Map(fields.map((f) => [f.fieldname, f]))
 }
 
+type SetValueFn = (name: string, value: unknown) => void
+
 /** Flat grid of DynamicFields for a list of fieldnames, in the given column count. */
 function FieldGrid({
     fieldnames,
     columns,
     byName,
     control,
+    setValue,
 }: {
     fieldnames: string[]
     columns?: 1 | 2 | 3 | 4
     byName: Map<string, FieldSpec>
     control: Control<Record<string, unknown>>
+    setValue?: SetValueFn
 }) {
     const gridCols =
         columns === 4
@@ -54,7 +58,7 @@ function FieldGrid({
             {fieldnames.map((fname) => {
                 const field = byName.get(fname)
                 if (!field) return null
-                return <DynamicField key={fname} control={control} spec={field} />
+                return <DynamicField key={fname} control={control} spec={field} setValue={setValue} />
             })}
         </div>
     )
@@ -65,10 +69,12 @@ function FieldSection({
     section,
     byName,
     control,
+    setValue,
 }: {
     section: WizardStepSection
     byName: Map<string, FieldSpec>
     control: Control<Record<string, unknown>>
+    setValue?: SetValueFn
 }) {
     return (
         <div className="grid gap-3">
@@ -80,6 +86,7 @@ function FieldSection({
                 columns={section.columns}
                 byName={byName}
                 control={control}
+                setValue={setValue}
             />
         </div>
     )
@@ -90,10 +97,12 @@ function WizardColumns({
     columns,
     byName,
     control,
+    setValue,
 }: {
     columns: NonNullable<WizardStep["columns"]>
     byName: Map<string, FieldSpec>
     control: Control<Record<string, unknown>>
+    setValue?: SetValueFn
 }) {
     const main = columns.find((c) => c.span === "main")
     const sidebar = columns.find((c) => c.span === "sidebar")
@@ -108,6 +117,7 @@ function WizardColumns({
                             section={section}
                             byName={byName}
                             control={control}
+                            setValue={setValue}
                         />
                     ))}
                 </div>
@@ -120,6 +130,7 @@ function WizardColumns({
                             section={section}
                             byName={byName}
                             control={control}
+                            setValue={setValue}
                         />
                     ))}
                 </div>
@@ -131,9 +142,12 @@ function WizardColumns({
 /**
  * Bridges a react-hook-form `control` to ChildTableGrid's controlled
  * `rows`/`onChange` shape. ChildTableGrid itself has no react-hook-form
- * awareness — it just gets fed an array and reports changes back.
+ * awareness — it just gets fed an array and reports changes back. Exported
+ * so EntryScreen can use the same control-registered child-table field for
+ * both wizard and flat-grid rendering, instead of a separate ad hoc
+ * useState-synced-from-doc copy.
  */
-function ChildTableField({
+export function ChildTableField({
     spec,
     control,
 }: {
@@ -155,10 +169,12 @@ function StepDialog({
     dialog,
     byName,
     control,
+    setValue,
 }: {
     dialog: NonNullable<WizardStep["dialog"]>
     byName: Map<string, FieldSpec>
     control: Control<Record<string, unknown>>
+    setValue?: SetValueFn
 }) {
     const [open, setOpen] = useState(false)
 
@@ -178,6 +194,7 @@ function StepDialog({
                         fieldnames={dialog.fieldnames ?? []}
                         byName={byName}
                         control={control}
+                        setValue={setValue}
                     />
                 )}
             </DialogContent>
@@ -205,10 +222,12 @@ function StepBody({
     step,
     byName,
     control,
+    setValue,
 }: {
     step: WizardStep
     byName: Map<string, FieldSpec>
     control: Control<Record<string, unknown>>
+    setValue?: SetValueFn
 }) {
     const hasBody =
         !!step.columns || !!step.sections || step.fieldnames.length > 0 || !!step.childTable
@@ -220,7 +239,7 @@ function StepBody({
     return (
         <div className="grid gap-6">
             {step.columns ? (
-                <WizardColumns columns={step.columns} byName={byName} control={control} />
+                <WizardColumns columns={step.columns} byName={byName} control={control} setValue={setValue} />
             ) : step.sections ? (
                 <div className="grid gap-6">
                     {step.sections.map((section, i) => (
@@ -229,6 +248,7 @@ function StepBody({
                             section={section}
                             byName={byName}
                             control={control}
+                            setValue={setValue}
                         />
                     ))}
                 </div>
@@ -238,6 +258,7 @@ function StepBody({
                     columns={step.fieldColumns}
                     byName={byName}
                     control={control}
+                    setValue={setValue}
                 />
             ) : null}
 
@@ -245,9 +266,65 @@ function StepBody({
 
             {step.dialog && (
                 <div>
-                    <StepDialog dialog={step.dialog} byName={byName} control={control} />
+                    <StepDialog dialog={step.dialog} byName={byName} control={control} setValue={setValue} />
                 </div>
             )}
+        </div>
+    )
+}
+
+/** Same dot/connector stepper indicator used by the Add Student wizard and
+ * the Assessment dialog wizard, for visual consistency across every
+ * multi-step form in the app. Steps are clickable — same as the previous
+ * tab-bar's behavior — since nothing here gates navigation on validation. */
+function StepDots({
+    steps,
+    activeStep,
+    onSelect,
+}: {
+    steps: WizardStep[]
+    activeStep: number
+    onSelect: (i: number) => void
+}) {
+    return (
+        <div className="flex items-start">
+            {steps.map((s, i) => (
+                <button
+                    type="button"
+                    key={s.key}
+                    onClick={() => onSelect(i)}
+                    className={cn("flex items-start", i < steps.length - 1 ? "flex-1" : "")}
+                >
+                    <div className="flex flex-col items-center gap-2">
+                        {i <= activeStep ? (
+                            <div
+                                className={cn(
+                                    "h-5 w-5 shrink-0 rounded-full bg-primary",
+                                    i === activeStep ? "ring-4 ring-primary/20" : ""
+                                )}
+                            />
+                        ) : (
+                            <div className="h-3.5 w-3.5 shrink-0 rounded-full border-2 border-muted-foreground/40" />
+                        )}
+                        <span
+                            className={cn(
+                                "w-24 text-center text-xs font-medium",
+                                i <= activeStep ? "text-foreground" : "text-muted-foreground"
+                            )}
+                        >
+                            {s.label}
+                        </span>
+                    </div>
+                    {i < steps.length - 1 && (
+                        <div
+                            className={cn(
+                                "mx-2 mt-[10px] h-0.5 flex-1",
+                                i <= activeStep ? "bg-primary" : "bg-muted"
+                            )}
+                        />
+                    )}
+                </button>
+            ))}
         </div>
     )
 }
@@ -256,10 +333,12 @@ export function WizardFormLayout({
     spec,
     layout,
     control,
+    setValue,
 }: {
     spec: FormSpec
     layout: WizardLayout
     control: Control<Record<string, unknown>>
+    setValue?: SetValueFn
 }) {
     const [activeStep, setActiveStep] = useState(0)
     const byName = byNameMap(spec.fields)
@@ -267,21 +346,11 @@ export function WizardFormLayout({
 
     return (
         <div className="grid gap-6">
-            <div className="flex flex-wrap gap-1 border-b pb-2">
-                {layout.steps.map((s, i) => (
-                    <Button
-                        key={s.key}
-                        type="button"
-                        variant={i === activeStep ? "secondary" : "ghost"}
-                        size="sm"
-                        onClick={() => setActiveStep(i)}
-                    >
-                        {s.label}
-                    </Button>
-                ))}
+            <div className="rounded-2xl border border-border p-3">
+                <StepDots steps={layout.steps} activeStep={activeStep} onSelect={setActiveStep} />
             </div>
 
-            <StepBody step={step} byName={byName} control={control} />
+            <StepBody step={step} byName={byName} control={control} setValue={setValue} />
 
             <div className="flex items-center justify-between border-t pt-4">
                 <Button

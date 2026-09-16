@@ -6,6 +6,7 @@ import { toast } from "sonner"
 
 import { frappe, getErrorMessage } from "@/lib/frappe"
 import { EntryScreen } from "@/components/sms/EntryScreen"
+import { BackLink } from "@/components/sms/BackLink"
 import { assessmentSpec } from "@/lib/forms/finance"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -31,6 +32,7 @@ export default function AssessmentEntryPage({
 
   return (
     <div className="grid gap-6">
+      <BackLink href="/finance/assessments" label="Assessments" />
       <EntryScreen spec={assessmentSpec} name={docName} basePath="/finance/assessments" />
       {docName && <AssessmentActions name={docName} />}
     </div>

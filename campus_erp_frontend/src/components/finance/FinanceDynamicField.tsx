@@ -126,7 +126,7 @@ function linkOptionLabel(spec: FieldSpec, opt: Record<string, unknown> & { name:
 }
 
 /** Row-styled field renderer for finance screens, mirroring DynamicField
- * but using the finance-ui design tokens instead of shadcn Form/Input. */
+ * but using the finance-ui design tokens instead of shadcn Form/Input.*/
 export function FinanceDynamicField<T extends FieldValues>({
   control,
   spec,

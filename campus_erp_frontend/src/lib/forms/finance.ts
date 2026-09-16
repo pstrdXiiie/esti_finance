@@ -1,4 +1,4 @@
-import type { EntrySpec, FormSpec } from "@/lib/forms/types"
+import type { ChildTableSpec, EntrySpec, FormSpec, WizardLayout } from "@/lib/forms/types"
 
 /**
  * Finance Billing module specs (blueprint Phase 2). Field lists mirror the
@@ -94,10 +94,106 @@ export const discountSpec: FormSpec = {
   ],
 }
 
+const assessmentDetailChildTable: ChildTableSpec = {
+  fieldname: "assessment_detail",
+  doctype: "SMS Student Assessment Detail",
+  columns: [
+    { fieldname: "particular", label: "Particular", fieldtype: "Data", required: true },
+    {
+      fieldname: "item_type",
+      label: "Item Type",
+      fieldtype: "Select",
+      options: "Tuition\nMisc Fee\nDiscount\nSurcharge\nPrevious Balance\nScholarship\nTotal",
+      required: true,
+    },
+    { fieldname: "fee_code", label: "Fee Code", fieldtype: "Link", options: "Fee Category" },
+    { fieldname: "header_code", label: "Header Code", fieldtype: "Link", options: "Fee Category" },
+    { fieldname: "amount", label: "Amount", fieldtype: "Currency", required: true },
+    { fieldname: "true_amount", label: "True Amount", fieldtype: "Currency" },
+    { fieldname: "amount_paid", label: "Amount Paid", fieldtype: "Currency" },
+  ],
+}
+
+/**
+ * Groups assessmentSpec's 39 flat fields (a plain 2-column flood otherwise —
+ * see the Desk-like screenshot this was built from) into the same
+ * dot/connector wizard used by the Add Student form and the Assessment
+ * dialog, via WizardFormLayout (EntryScreen renders this instead of the flat
+ * grid whenever `wizard` is set — see EntryScreen.tsx). Line Items reuses the
+ * same assessmentDetailChildTable object as the spec's own top-level
+ * `childTable`, not a duplicate copy of its columns.
+ */
+const assessmentWizard: WizardLayout = {
+  steps: [
+    {
+      key: "student-term",
+      label: "Student & Term",
+      fieldnames: [
+        "student",
+        "student_name",
+        "program_enrollment",
+        "program",
+        "company",
+        "currency",
+        "school_year",
+        "school_term",
+        "semester",
+        "year_level",
+        "student_type",
+        "posting_date",
+        "due_date",
+      ],
+    },
+    {
+      key: "fees",
+      label: "Fees & Tuition",
+      fieldnames: ["payment_mode", "installment_months", "tuition", "new_tuition", "misc_fee", "other_fee", "assessment"],
+    },
+    {
+      key: "discounts",
+      label: "Discounts & Adjustments",
+      fieldnames: [
+        "discount_type",
+        "discount_percent",
+        "other_discount",
+        "misc_discount",
+        "scholarship",
+        "subsidy",
+        "old_account",
+        "old_assessment",
+        "old_account_payment",
+      ],
+    },
+    {
+      key: "totals-status",
+      label: "Totals & Status",
+      fieldnames: [
+        "total_fee",
+        "payment",
+        "receivable",
+        "refnum",
+        "cor_reference",
+        "receivable_account",
+        "cost_center",
+        "status",
+        "is_reassessment",
+        "branch",
+      ],
+    },
+    {
+      key: "line-items",
+      label: "Line Items",
+      fieldnames: [],
+      childTable: assessmentDetailChildTable,
+    },
+  ],
+}
+
 export const assessmentSpec: EntrySpec = {
   doctype: "SMS Student Assessment",
   title: "Student Assessment",
   submittable: true,
+  wizard: assessmentWizard,
   fields: [
     {
       fieldname: "student",
@@ -184,25 +280,7 @@ export const assessmentSpec: EntrySpec = {
     { fieldname: "is_reassessment", label: "Is Reassessment", fieldtype: "Check" },
     { fieldname: "branch", label: "Branch", fieldtype: "Link", options: "Branch" },
   ],
-  childTable: {
-    fieldname: "assessment_detail",
-    doctype: "SMS Student Assessment Detail",
-    columns: [
-      { fieldname: "particular", label: "Particular", fieldtype: "Data", required: true },
-      {
-        fieldname: "item_type",
-        label: "Item Type",
-        fieldtype: "Select",
-        options: "Tuition\nMisc Fee\nDiscount\nSurcharge\nPrevious Balance\nScholarship\nTotal",
-        required: true,
-      },
-      { fieldname: "fee_code", label: "Fee Code", fieldtype: "Link", options: "Fee Category" },
-      { fieldname: "header_code", label: "Header Code", fieldtype: "Link", options: "Fee Category" },
-      { fieldname: "amount", label: "Amount", fieldtype: "Currency", required: true },
-      { fieldname: "true_amount", label: "True Amount", fieldtype: "Currency" },
-      { fieldname: "amount_paid", label: "Amount Paid", fieldtype: "Currency" },
-    ],
-  },
+  childTable: assessmentDetailChildTable,
 }
 
 
@@ -449,6 +527,176 @@ export const sundryaccSearch: FormSpec = {
       label: "Filter Date",
       fieldtype: "Date",
       section: "Search & Filters",
+    },
+  ],
+};
+
+export const cashReceipt: FormSpec = {
+  doctype: "SMS Payment and Cash Receipt Entry",
+  title: "Cash Receipt Transaction",
+
+  fields: [
+    // Payment Type
+    {
+      fieldname: "payment_type",
+      label: "Payment Type",
+      fieldtype: "Select",
+      options:
+        "Student Payment (From Assessment)\nStudent Payment (Other than Assessment)",
+      required: true,
+      section: "Payment Type",
+    },
+
+    {
+      fieldname: "semester",
+      label: "Semester",
+      fieldtype: "Select",
+      options: "1st Semester\n2nd Semester\n3rd Semester\nSummer",
+      required: true,
+      section: "Payment Type",
+    },
+
+    {
+      fieldname: "school_year",
+      label: "School Year",
+      fieldtype: "Data",
+      required: true,
+      section: "Payment Type",
+    },
+
+    // Student Information
+    {
+      fieldname: "student_number",
+      label: "Student No.",
+      fieldtype: "Link",
+      options: "Student",
+      required: true,
+      section: "Student Information",
+      inListView: true,
+    },
+
+    {
+      fieldname: "payee",
+      label: "Payee",
+      fieldtype: "Data",
+      readOnly: true,
+      section: "Student Information",
+    },
+
+    {
+      fieldname: "course",
+      label: "Course",
+      fieldtype: "Data",
+      readOnly: true,
+      section: "Student Information",
+    },
+
+    // Assessment
+    {
+      fieldname: "assessment_fees",
+      label: "Assessment of Fees",
+      fieldtype: "Currency",
+      readOnly: true,
+      section: "Assessment & Balance",
+      dependsOn: 'eval:doc.payment_type=="Student Payment (From Assessment)"',
+    },
+
+    {
+      fieldname: "assessment",
+      label: "Assessment",
+      fieldtype: "Currency",
+      readOnly: true,
+      section: "Assessment & Balance",
+      dependsOn: 'eval:doc.payment_type=="Student Payment (From Assessment)"',
+    },
+
+    {
+      fieldname: "payment_due",
+      label: "Payment Due",
+      fieldtype: "Currency",
+      readOnly: true,
+      section: "Assessment & Balance",
+      dependsOn: 'eval:doc.payment_type=="Student Payment (From Assessment)"',
+    },
+
+    {
+      fieldname: "balance",
+      label: "Balance",
+      fieldtype: "Currency",
+      readOnly: true,
+      section: "Assessment & Balance",
+      dependsOn: 'eval:doc.payment_type=="Student Payment (From Assessment)"',
+    },
+
+    {
+      fieldname: "total_payments",
+      label: "Total Payments",
+      fieldtype: "Currency",
+      readOnly: true,
+      section: "Assessment & Balance",
+      dependsOn: 'eval:doc.payment_type=="Student Payment (From Assessment)"',
+    },
+
+    {
+      fieldname: "payment_period",
+      label: "Payment Period",
+      fieldtype: "Select",
+      options: "Prelim\nMidterm\nFinal",
+      section: "Assessment & Balance",
+      dependsOn: 'eval:doc.payment_type=="Student Payment (From Assessment)"',
+    },
+
+    // Receipt
+    {
+      fieldname: "or_number",
+      label: "OR Number",
+      fieldtype: "Data",
+      required: true,
+      section: "Receipt Details",
+      inListView: true,
+    },
+
+    {
+      fieldname: "date",
+      label: "Date",
+      fieldtype: "Date",
+      required: true,
+      section: "Receipt Details",
+    },
+
+    {
+      fieldname: "amount",
+      label: "Amount",
+      fieldtype: "Currency",
+      required: true,
+      section: "Receipt Details",
+    },
+
+    {
+      fieldname: "account_charged",
+      label: "Account Charged",
+      fieldtype: "Link",
+      options: "Account",
+      required: true,
+      section: "Receipt Details",
+    },
+
+    // Payment
+    {
+      fieldname: "mode_of_payment",
+      label: "Mode of Payment",
+      fieldtype: "Select",
+      options: "Cash\nCheck",
+      required: true,
+      section: "Payment Details",
+    },
+
+    {
+      fieldname: "check_number",
+      label: "Check Number",
+      fieldtype: "Data",
+      section: "Payment Details",
+      dependsOn: 'eval:doc.mode_of_payment=="Check"',
     },
   ],
 };

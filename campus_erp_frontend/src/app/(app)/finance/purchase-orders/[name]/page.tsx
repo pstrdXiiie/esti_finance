@@ -6,6 +6,7 @@ import { toast } from "sonner"
 
 import { frappe, getErrorMessage } from "@/lib/frappe"
 import { EntryScreen } from "@/components/sms/EntryScreen"
+import { BackLink } from "@/components/sms/BackLink"
 import { purchaseOrderSpec } from "@/lib/forms/purchasing"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -27,6 +28,10 @@ export default function PurchaseOrderEntryPage({
 
   return (
     <div className="grid gap-6">
+      {/* Real inbound link is Requisitions' "View {po}" button (see
+          finance/requisitions/page.tsx) — purchase-orders/page.tsx itself
+          uses FinanceMaintenanceScreen and never navigates here. */}
+      <BackLink href="/finance/requisitions" label="Requisitions" />
       <EntryScreen spec={purchaseOrderSpec} name={docName} basePath="/finance/purchase-orders" />
       {docName && <PurchaseOrderActions name={docName} />}
     </div>

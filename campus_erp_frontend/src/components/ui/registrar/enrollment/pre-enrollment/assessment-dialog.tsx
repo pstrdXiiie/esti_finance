@@ -102,6 +102,42 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   )
 }
 
+const STEPS = ["Student Info", "Miscellaneous & Discount", "Additional Fees & Payment", "Review & Save"]
+
+/** Same dot/connector stepper indicator as the Add Student wizard
+ * (registrar/students/new/page.tsx), reused here for visual consistency. */
+function StepIndicator({ currentStep }: { currentStep: number }) {
+  return (
+    <div className="flex items-start pb-2">
+      {STEPS.map((label, idx) => (
+        <div key={label} className={`flex items-start ${idx < STEPS.length - 1 ? "flex-1" : ""}`}>
+          <div className="flex flex-col items-center gap-2">
+            {idx <= currentStep ? (
+              <div
+                className={`h-5 w-5 shrink-0 rounded-full bg-primary ${
+                  idx === currentStep ? "ring-4 ring-primary/20" : ""
+                }`}
+              />
+            ) : (
+              <div className="h-3.5 w-3.5 shrink-0 rounded-full border-2 border-muted-foreground/40" />
+            )}
+            <span
+              className={`w-24 text-center text-xs font-medium ${
+                idx <= currentStep ? "text-foreground" : "text-muted-foreground"
+              }`}
+            >
+              {label}
+            </span>
+          </div>
+          {idx < STEPS.length - 1 && (
+            <div className={`mx-2 mt-[10px] h-0.5 flex-1 ${idx <= currentStep ? "bg-primary" : "bg-muted"}`} />
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default function AssessmentDialog({
   open,
   onOpenChange,
@@ -148,6 +184,18 @@ export default function AssessmentDialog({
       }),
     enabled: open,
   })
+
+  const [currentStep, setCurrentStep] = useState(0)
+  // Fresh open always starts back at step 0, regardless of where a previous
+  // visit left off — only the underlying draft's saved data should persist
+  // across opens, not incidental wizard-navigation state.
+  const [wasOpen, setWasOpen] = useState(false)
+  if (open && !wasOpen) {
+    setWasOpen(true)
+    setCurrentStep(0)
+  } else if (!open && wasOpen) {
+    setWasOpen(false)
+  }
 
   const [miscHeader, setMiscHeader] = useState("")
   const [checkedParticulars, setCheckedParticulars] = useState<Set<string>>(new Set())
@@ -288,20 +336,31 @@ export default function AssessmentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-3xl sm:max-w-3xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="flex w-full max-w-3xl flex-col gap-3 sm:max-w-3xl max-h-[85vh]">
+        <DialogHeader className="shrink-0">
           <DialogTitle>Assessment</DialogTitle>
         </DialogHeader>
+
+        {assessment && (
+          <div className="shrink-0 rounded-2xl border border-border p-3">
+            <StepIndicator currentStep={currentStep} />
+          </div>
+        )}
 
         {assessmentQuery.isLoading && (
           <div className="py-8 text-center text-muted-foreground">Loading…</div>
         )}
 
         {assessment && (
+          <div className="min-h-0 flex-1 overflow-y-auto rounded-2xl border border-border p-5">
           <div className="grid gap-5">
+            {currentStep === 0 && (
             <section className="grid gap-3">
-              <h3 className="text-sm font-semibold">Student Info</h3>
-              <div className="grid grid-cols-2 gap-3 rounded-md border p-3 sm:grid-cols-3">
+              <div className="relative rounded-md border p-3 pt-4">
+                <span className="absolute -top-2.5 left-3 bg-card px-1 text-xs font-medium">
+                  Student Info
+                </span>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <Field label="Student No.">
                   <div className="text-sm font-medium">{student.stdnt_cno || "—"}</div>
                 </Field>
@@ -320,13 +379,17 @@ export default function AssessmentDialog({
                 <Field label="Year Level">
                   <div className="text-sm font-medium">{yearLevel}</div>
                 </Field>
+                </div>
               </div>
             </section>
+            )}
 
-            <div className="grid gap-3 sm:grid-cols-2 items-baseline">
-              <div className="grid gap-3 content-start">
-                <section className="grid gap-3 rounded-md border p-3 min-h-0 items-baseline">
-                  <h3 className="text-sm font-semibold">Miscellaneous</h3>
+            {currentStep === 1 && (
+            <div className="grid gap-3">
+                <section className="relative grid gap-3 rounded-md border p-3 pt-4 min-h-0 items-baseline">
+                  <span className="absolute -top-2.5 left-3 bg-card px-1 text-xs font-medium">
+                    Miscellaneous
+                  </span>
                   <Field label="Header">
                     <Select value={miscHeader} onValueChange={(v) => setMiscHeader(v ?? "")}>
                       <SelectTrigger className="w-full">
@@ -405,8 +468,10 @@ export default function AssessmentDialog({
                   </div>
                 </section>
 
-                <section className="grid gap-3 rounded-md border p-3">
-                  <h3 className="text-sm font-semibold">Discount</h3>
+                <section className="relative grid gap-3 rounded-md border p-3 pt-4">
+                  <span className="absolute -top-2.5 left-3 bg-card px-1 text-xs font-medium">
+                    Discount
+                  </span>
                   <Field label="Discount Code">
                     <Select value={discountType} onValueChange={(v) => setDiscountType(v ?? "")}>
                       <SelectTrigger className="w-full">
@@ -442,11 +507,15 @@ export default function AssessmentDialog({
                     </div>
                   )}
                 </section>
-              </div>
+            </div>
+            )}
 
-              <section className="grid gap-3 rounded-md border p-3 content-start">
-                <h3 className="text-sm font-semibold">Assessment Fees</h3>
-                <Field label="Tuition Fee">
+            {currentStep === 2 && (
+            <div className="grid gap-3 content-start">
+                <section className="relative grid gap-3 rounded-md border p-3 pt-4">
+                  <span className="absolute -top-2.5 left-3 bg-card px-1 text-xs font-medium">
+                    Tuition Fee
+                  </span>
                   <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm font-medium">
                     ₱{formatCurrency(tuition)}
                   </div>
@@ -455,10 +524,12 @@ export default function AssessmentDialog({
                     {formatCurrency(assessment.tuition_rate)} per unit (rate set in Finance &gt;
                     Maintenance &gt; Tuition Fee for {program}).
                   </p>
-                </Field>
+                </section>
 
-                <section className="grid gap-3 rounded-md border p-3">
-                  <h4 className="text-sm font-semibold">Additional Fees</h4>
+                <section className="relative grid gap-3 rounded-md border p-3 pt-4">
+                  <span className="absolute -top-2.5 left-3 bg-card px-1 text-xs font-medium">
+                    Additional Fees
+                  </span>
                   <div className="max-h-[160px] min-h-0 overflow-y-auto rounded-md border">
                     <table className="w-full text-sm">
                       <thead className="sticky top-0 bg-card">
@@ -522,8 +593,10 @@ export default function AssessmentDialog({
                   </div>
                 </section>
 
-                <section className="grid gap-3 rounded-md border p-3">
-                  <h4 className="text-sm font-semibold">Payment Option</h4>
+                <section className="relative grid gap-3 rounded-md border p-3 pt-4">
+                  <span className="absolute -top-2.5 left-3 bg-card px-1 text-xs font-medium">
+                    Payment Option
+                  </span>
                   <div className="flex flex-wrap items-end gap-3">
                     <Field label="Cash or Installment">
                       <Select
@@ -557,15 +630,60 @@ export default function AssessmentDialog({
                     </div>
                   )}
                 </section>
+            </div>
+            )}
+
+            {currentStep === 3 && (
+            <div className="grid gap-3">
+              <section className="relative grid gap-2 rounded-md border p-3 pt-4">
+                <span className="absolute -top-2.5 left-3 bg-card px-1 text-xs font-medium">
+                  Review
+                </span>
+                <div className="grid gap-1.5 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Tuition Fee</span>
+                    <span className="font-medium">₱{formatCurrency(tuition)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Miscellaneous Fee</span>
+                    <span className="font-medium">₱{formatCurrency(miscFeeTotal)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Additional Fees</span>
+                    <span className="font-medium">₱{formatCurrency(extraFeeTotal)}</span>
+                  </div>
+                  {discountType && (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Tuition Discount</span>
+                        <span className="font-medium">−₱{formatCurrency(tuitionDiscount)}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Misc Fee Discount</span>
+                        <span className="font-medium">−₱{formatCurrency(miscDiscountAmount)}</span>
+                      </div>
+                    </>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Payment</span>
+                    <span className="font-medium">
+                      {paymentMode === "Installment"
+                        ? `Installment — ${months} month${months === 1 ? "" : "s"} (≈ ₱${formatCurrency(perInstallment)}/mo)`
+                        : "Cash"}
+                    </span>
+                  </div>
+                </div>
+              </section>
+
+              <section className="rounded-md border bg-muted/30 p-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold">Total Fees</span>
+                  <span className="text-xl font-bold">₱{formatCurrency(previewTotal)}</span>
+                </div>
               </section>
             </div>
-
-            <section className="rounded-md border bg-muted/30 p-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold">Total Fees</span>
-                <span className="text-xl font-bold">₱{formatCurrency(previewTotal)}</span>
-              </div>
-            </section>
+            )}
+          </div>
           </div>
         )}
 
@@ -582,13 +700,24 @@ export default function AssessmentDialog({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Close
             </Button>
-            <Button
-              type="button"
-              disabled={!assessment || saveMutation.isPending}
-              onClick={() => saveMutation.mutate()}
-            >
-              {saveMutation.isPending ? "Saving…" : "Save"}
-            </Button>
+            {currentStep > 0 && (
+              <Button type="button" variant="outline" onClick={() => setCurrentStep((s) => s - 1)}>
+                Back
+              </Button>
+            )}
+            {currentStep < STEPS.length - 1 ? (
+              <Button type="button" disabled={!assessment} onClick={() => setCurrentStep((s) => s + 1)}>
+                Next
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                disabled={!assessment || saveMutation.isPending}
+                onClick={() => saveMutation.mutate()}
+              >
+                {saveMutation.isPending ? "Saving…" : "Save"}
+              </Button>
+            )}
           </div>
         </DialogFooter>
       </DialogContent>

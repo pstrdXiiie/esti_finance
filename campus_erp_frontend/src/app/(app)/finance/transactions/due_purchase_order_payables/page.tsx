@@ -1,8 +1,8 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Save, RotateCcw, Printer, Search } from "lucide-react"
+import { useQuery } from "@tanstack/react-query"
+import { Save, Trash2, Printer, Search } from "lucide-react"
 import { toast } from "sonner"
 
 import { frappe, getErrorMessage } from "@/lib/frappe"
@@ -13,16 +13,13 @@ import { FinanceVoucherToolbar, type FinanceToolbarAction } from "@/components/s
 
 // Rebuilt from two screenshots of the legacy "Accounts Payable" screen —
 // they're one form: the due-payables grid + voucher fields on top, GL
-// entries at the bottom. There is no separate "SMS Due Purchase Order
-// Payable" doctype: this reads submitted Purchase Orders directly via
-// campus_erp.api.finance_purchasing.get_due_purchase_order_payables, and
-// "Save" posts a real Journal Entry via
-// campus_erp.api.finance_purchasing.settle_purchase_order_payable, which
-// also flips the PO's payables_settled / settlement_reference custom
-// fields — mirroring how Canteen PCV replenishment works. Column headers
-// below (ponum, supcode, supname, podate, date_posted, sinum, poterms,
-// potax, poamount, aging) are taken verbatim from the legacy grid header
-// text.
+// entries at the bottom. Backed by "SMS Due Purchase Order Payable" /
+// "SMS Due Purchase Order Payable GL Entry" (see
+// apps/campus_erp/campus_erp/finance/doctype/) and the
+// campus_erp.api.finance.get_due_purchase_order_payables RPC. Column
+// headers below (ponum, supcode, supname, podate, date_posted, sinum,
+// poterms, potax, poamount, aging) are taken verbatim from the legacy
+// grid header text — confirm they match your real PO fields.
 
 interface DuePayableRow {
   ponum: string
@@ -69,7 +66,6 @@ const dueColumns: FinanceRecordColumn<DuePayableRow>[] = [
 ]
 
 export default function AccountsPayablePage() {
-  const queryClient = useQueryClient()
   const [supplierFilter, setSupplierFilter] = useState("")
 
   const [poNum, setPoNum] = useState("")
@@ -88,13 +84,11 @@ export default function AccountsPayablePage() {
   const [glAmount, setGlAmount] = useState("")
   const [glDrCr, setGlDrCr] = useState<"DR" | "CR">("DR")
 
-  const duePayablesKey = ["campus_erp.api.finance_purchasing.get_due_purchase_order_payables", supplierFilter]
-
-  const { data: duePayables = [], isLoading } = useQuery({
-    queryKey: duePayablesKey,
+  const { data: duePayables = [], isLoading, refetch } = useQuery({
+    queryKey: ["campus_erp.api.finance.get_due_purchase_order_payables", supplierFilter],
     queryFn: () =>
       frappe.callGet<DuePayableRow[]>(
-        "campus_erp.api.finance_purchasing.get_due_purchase_order_payables",
+        "campus_erp.api.finance.get_due_purchase_order_payables",
         supplierFilter ? { supplier: supplierFilter } : {}
       ),
   })
@@ -132,20 +126,6 @@ export default function AccountsPayablePage() {
     setAmount(String(row.poamount))
   }
 
-  function resetForm() {
-    setPoNum("")
-    setDatePoPosted("")
-    setTerms("")
-    setSiNumber("")
-    setPayTo("")
-    setTaxPercent("0")
-    setAmount("0")
-    setCheckNumber("")
-    setCheckDate(today())
-    setNotes("")
-    setGlRows([])
-  }
-
   function addGlRow() {
     if (!glAccount || !glAmount) return
     const acct = accounts.find((a) => a.name === glAccount)
@@ -169,33 +149,40 @@ export default function AccountsPayablePage() {
     setGlRows(glRows.filter((_, i) => i !== index))
   }
 
-  const settleMutation = useMutation({
-    mutationFn: () =>
-      frappe.call<{ journal_entry: string }>(
-        "campus_erp.api.finance_purchasing.settle_purchase_order_payable",
-        {
-          purchase_order: poNum,
-          si_number: siNumber || undefined,
-          check_number: checkNumber || undefined,
-          check_date: checkDate || undefined,
-          accounts: glRows.map((r) => ({ account: r.account, debit: r.debit, credit: r.credit })),
-        }
-      ),
-    onSuccess: (result) => {
-      toast.success(`Payable settled — Journal Entry ${result.journal_entry}`)
-      queryClient.invalidateQueries({ queryKey: duePayablesKey })
-      resetForm()
-    },
-    onError: (error) => toast.error(getErrorMessage(error)),
-  })
+  async function handleSave() {
+    const payload = {
+      po_num: poNum,
+      terms,
+      si_number: siNumber,
+      pay_to: payTo,
+      tax_percent: Number(taxPercent),
+      amount: Number(amount),
+      check_number: checkNumber,
+      check_date: checkDate,
+      notes,
+      accounts: glRows.map((r) => ({ account: r.account, debit: r.debit, credit: r.credit })),
+    }
+    try {
+      await frappe.createDoc("SMS Due Purchase Order Payable", payload)
+      refetch()
+    } catch (err) {
+      toast.error(`Could not save payable: ${getErrorMessage(err)}`)
+    }
+  }
+
+  function handleDelete() {
+    if (!poNum) return
+    // TODO: wire to frappe.deleteDoc("SMS Due Purchase Order Payable", <name>)
+    console.log("delete", poNum)
+  }
 
   function handlePrint() {
     window.print()
   }
 
   const toolbarActions: FinanceToolbarAction[] = [
-    { key: "save", icon: Save, label: "Save", onClick: () => settleMutation.mutate(), disabled: !canSave || settleMutation.isPending },
-    { key: "cancel", icon: RotateCcw, label: "Cancel", onClick: resetForm },
+    { key: "save", icon: Save, label: "Save", onClick: handleSave, disabled: !canSave },
+    { key: "delete", icon: Trash2, label: "Delete", onClick: handleDelete },
     { key: "print", icon: Printer, label: "Print", onClick: handlePrint },
     { key: "find", icon: Search, label: "Find", onClick: () => document.getElementById("ap-po-search")?.focus() },
   ]
@@ -209,8 +196,6 @@ export default function AccountsPayablePage() {
           receipt can never be cancelled.
         </p>
       </div>
-      <FinanceVoucherToolbar actions={toolbarActions} onExit={() => history.back()} />
-
       <FinancePropertySection
         title="Due Purchase Order Payables"
         right={
@@ -233,6 +218,8 @@ export default function AccountsPayablePage() {
           emptyMessage="No due payables found."
         />
       </FinancePropertySection>
+
+      <FinanceVoucherToolbar actions={toolbarActions} onExit={() => history.back()} />
 
       <FinancePropertySection title="Voucher Details">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
@@ -303,7 +290,7 @@ export default function AccountsPayablePage() {
           ) : undefined
         }
       >
-        <div className="grid grid-cols-[100px_1fr_90px_90px_20px] border-b border-border pb-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <div className="grid grid-cols-[100px_1fr_90px_90px_20px] border-b border-border pb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
           <span>Acct #</span>
           <span>Acct Name</span>
           <span className="text-right">Debit</span>
@@ -311,7 +298,7 @@ export default function AccountsPayablePage() {
           <span />
         </div>
         {glRows.map((row, i) => (
-          <div key={i} className="grid grid-cols-[100px_1fr_90px_90px_20px] items-center border-b border-border py-1.5 text-sm last:border-b-0">
+          <div key={i} className="grid grid-cols-[100px_1fr_90px_90px_20px] items-center border-b border-border py-1.5 text-[13px] last:border-b-0">
             <span>{row.account_number}</span>
             <span>{row.account_name}</span>
             <span className="text-right font-mono">{row.debit > 0 ? row.debit.toFixed(2) : "—"}</span>

@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
@@ -11,7 +10,7 @@ import type { EntrySpec } from "@/lib/forms/types"
 import { Button } from "@/components/ui/button"
 import { Form } from "@/components/ui/form"
 import { DynamicField } from "@/components/sms/DynamicField"
-import { ChildTableGrid } from "@/components/sms/ChildTableGrid"
+import { ChildTableField, WizardFormLayout } from "@/components/sms/WizardFormLayout"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
@@ -44,8 +43,6 @@ export function EntryScreen({
 }) {
   const queryClient = useQueryClient()
   const router = useRouter()
-  const [rows, setRows] = useState<Array<Record<string, unknown>>>([])
-  const [syncedDoc, setSyncedDoc] = useState<Record<string, unknown> | undefined>(undefined)
 
   const { data: doc, isLoading } = useQuery({
     queryKey: [spec.doctype, name],
@@ -53,42 +50,36 @@ export function EntryScreen({
     enabled: !!name,
   })
 
+  // The child table's own field is seeded/reset here too (not just
+  // spec.fields) so it round-trips entirely through react-hook-form's own
+  // `values` reset — ChildTableField (see WizardFormLayout.tsx) registers it
+  // via useController against this same `control`, the same mechanism as
+  // every top-level field, rather than a second ad hoc copy kept in sync by
+  // hand. That ad hoc copy is what used to cause opening an existing
+  // document with a child table (e.g. Curriculum Subjects, Assessment
+  // Detail) to render an empty grid and silently wipe it on the next Save.
   const form = useForm<Record<string, unknown>>({
-  defaultValues: spec.fields.reduce(
-    (acc, f) => ({ ...acc, [f.fieldname]: doc?.[f.fieldname] ?? "" }),
-    {}
-  ),
+  defaultValues: {
+    ...spec.fields.reduce((acc, f) => ({ ...acc, [f.fieldname]: doc?.[f.fieldname] ?? "" }), {}),
+    ...(spec.childTable ? { [spec.childTable.fieldname]: doc?.[spec.childTable.fieldname] ?? [] } : {}),
+  },
   values: doc
-    ? spec.fields.reduce(
-        (acc, f) => ({ ...acc, [f.fieldname]: doc[f.fieldname] ?? "" }),
-        {}
-      )
+    ? {
+        ...spec.fields.reduce((acc, f) => ({ ...acc, [f.fieldname]: doc[f.fieldname] ?? "" }), {}),
+        ...(spec.childTable ? { [spec.childTable.fieldname]: doc[spec.childTable.fieldname] ?? [] } : {}),
+      }
     : undefined,
 })
-  // Bug fix: `rows` used to only ever be seeded from the initial `[]` state,
-  // so opening an existing document with a child table (e.g. Curriculum
-  // Subjects, Permit Subjects, Assessment Detail) rendered an empty grid and
-  // silently wiped the child table on the next Save. Sync `rows` from the doc
-  // whenever a new one loads, using React's "adjust state during render"
-  // pattern (not an effect) so the corrected rows are ready for this render.
-  if (spec.childTable && doc && doc !== syncedDoc) {
-    setSyncedDoc(doc)
-    const existing = doc[spec.childTable.fieldname]
-    setRows(Array.isArray(existing) ? (existing as Array<Record<string, unknown>>) : [])
-  }
 
   const status = (doc?.[spec.workflowActions ? "status" : ""] as string) ?? undefined
 
   const saveMutation = useMutation({
     mutationFn: async (values: Record<string, unknown>) => {
-      const payload = spec.childTable
-        ? { ...values, [spec.childTable.fieldname]: rows }
-        : values
       return name
-        ? frappe.updateDoc(spec.doctype, name, payload)
+        ? frappe.updateDoc(spec.doctype, name, values)
         : (spec.primaryApi
-            ? frappe.call(spec.primaryApi, payload)
-            : frappe.createDoc(spec.doctype, payload))
+            ? frappe.call(spec.primaryApi, values)
+            : frappe.createDoc(spec.doctype, values))
     },
    onSuccess: (saved) => {
   toast.success(`${spec.title} saved`)
@@ -131,25 +122,32 @@ export function EntryScreen({
           onSubmit={form.handleSubmit((values) => saveMutation.mutate(values))}
           className="grid gap-6"
         >
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {spec.fields.map((f) => (
-              <DynamicField
-                key={f.fieldname}
-                control={form.control}
-                spec={f}
-                setValue={form.setValue as (name: string, value: unknown) => void}
-              />
-            ))}
-          </div>
-
-          {spec.childTable && (
+          {spec.wizard ? (
+            <WizardFormLayout
+              spec={spec}
+              layout={spec.wizard}
+              control={form.control}
+              setValue={form.setValue as (name: string, value: unknown) => void}
+            />
+          ) : (
             <>
-              <Separator />
-              <ChildTableGrid
-                spec={spec.childTable}
-                rows={rows}
-                onChange={setRows}
-              />
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {spec.fields.map((f) => (
+                  <DynamicField
+                    key={f.fieldname}
+                    control={form.control}
+                    spec={f}
+                    setValue={form.setValue as (name: string, value: unknown) => void}
+                  />
+                ))}
+              </div>
+
+              {spec.childTable && (
+                <>
+                  <Separator />
+                  <ChildTableField spec={spec.childTable} control={form.control} />
+                </>
+              )}
             </>
           )}
 

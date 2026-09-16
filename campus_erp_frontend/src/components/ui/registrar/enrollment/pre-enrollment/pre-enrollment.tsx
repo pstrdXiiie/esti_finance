@@ -176,54 +176,39 @@ export default function PreEnrollment() {
   })
 
   // Which subjects the Classes tab has actually offered a class for, at this
-  // program/academic year/year level/semester — ignoring Section, since a
-  // student isn't sectioned yet at the Pre-Enrollment (Subject Listing)
-  // stage. A subject with no offered class anywhere can't really be
-  // pre-enrolled into, so it's filtered out of the prescribed listing below
-  // rather than shown as a dead-end checkbox.
+  // program/academic year — ignoring Section, since a student isn't
+  // sectioned yet at the Pre-Enrollment (Subject Listing) stage. A subject
+  // with no offered class anywhere can't really be pre-enrolled into, so
+  // it's filtered out of the prescribed listing below rather than shown as
+  // a dead-end checkbox.
+  //
+  // Deliberately NOT scoped by year_level/semester: Student Group has no
+  // such fields (confirmed against the live schema — it only carries
+  // academic_term, which isn't populated in practice), so a class offered
+  // for a course is offered for that course full stop, at this program and
+  // academic year.
   //
   // Once a record is loaded, this must key off the RECORD's own
-  // program/academic_year/year_level/semester, not the header's — an
-  // existing SMS Pre Enrollment is looked up by (student, academic_year,
-  // semester) alone (year_level isn't part of that key), so a record saved
-  // under one year_level can resurface later after the student's Program
-  // Enrollment year_level has drifted. Filtering against the header's
-  // (possibly different) year_level would match zero classes and hide every
-  // subject, even ones that really are offered for the record's own term.
+  // program/academic_year, not the header's — an existing SMS Pre
+  // Enrollment is looked up by (student, academic_year, semester) alone, so
+  // a record saved under one program can resurface later after the header's
+  // own program selection has moved on.
   const effectiveProgram = record?.program ?? program
   const effectiveAcademicYear = record?.academic_year ?? academicYear
-  // != null (not a truthy check) so a real-but-falsy 0 — an unset Year Level
-  // on Program Enrollment before a record is loaded — still runs the query
-  // rather than getting treated the same as "nothing selected yet".
-  const effectiveYearLevel = record ? record.year_level : yearLevel !== "" ? Number(yearLevel) : null
-  const effectiveSemester = record ? record.semester : semester !== "" ? Number(semester) : null
 
   const offeredClassesQuery = useQuery({
-    queryKey: [
-      "Student Group",
-      "offered-courses",
-      effectiveProgram,
-      effectiveAcademicYear,
-      effectiveSemester,
-      effectiveYearLevel,
-    ],
+    queryKey: ["Student Group", "offered-courses", effectiveProgram, effectiveAcademicYear],
     queryFn: () =>
       frappe.list<StudentGroupCourseRow>("Student Group", {
         filters: [
           ["program", "=", effectiveProgram],
           ["academic_year", "=", effectiveAcademicYear],
-          ["year_level", "=", effectiveYearLevel],
-          ["semester", "=", effectiveSemester],
           ["group_based_on", "=", "Course"],
         ],
         fields: ["course"],
         limit_page_length: 500,
       }),
-    enabled:
-      !!effectiveProgram &&
-      !!effectiveAcademicYear &&
-      effectiveYearLevel != null &&
-      effectiveSemester != null,
+    enabled: !!effectiveProgram && !!effectiveAcademicYear,
   })
 
   const offeredSubjects = offeredClassesQuery.data

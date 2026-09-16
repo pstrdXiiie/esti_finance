@@ -91,39 +91,39 @@ export function FinanceEntryListScreen({
   const listColumns = spec.fields.filter((f) => f.inListView)
   const columns = listColumns.length ? listColumns : spec.fields.slice(0, 4)
 
-const linkColumns = columns.filter(
-  (c) => c.fieldtype === "Link" && c.options && c.linkLabelFields?.length
-)
-
-const linkLabelQueries = useQueries({
-  queries: linkColumns.map((c) => ({
-    queryKey: ["Link", "labels", c.options, c.linkLabelFields],
-    queryFn: () =>
-      frappe.list<Record<string, unknown> & { name: string }>(c.options as string, {
-        fields: ["name", ...(c.linkLabelFields ?? [])],
-        limit_page_length: 1000,
-      }),
-  })),
-})
-
-const linkLabelMaps = linkColumns.reduce<Record<string, Record<string, string>>>((acc, c, i) => {
-  const rows = linkLabelQueries[i]?.data ?? []
-  acc[c.fieldname] = Object.fromEntries(
-    rows.map((r) => [
-      r.name,
-      (c.linkLabelFields ?? []).map((f) => r[f]).filter(Boolean).join("") || r.name,
-    ])
+  const linkColumns = columns.filter(
+    (c) => c.fieldtype === "Link" && c.options && c.linkLabelFields?.length
   )
-  return acc
-}, {})
 
-function formatCell(c: (typeof columns)[number], row: Record<string, unknown>): string {
-  const raw = row[c.fieldname]
-  if (c.fieldtype === "Link" && linkLabelMaps[c.fieldname]) {
-    return linkLabelMaps[c.fieldname][String(raw)] ?? String(raw ?? "")
+  const linkLabelQueries = useQueries({
+    queries: linkColumns.map((c) => ({
+      queryKey: ["Link", "labels", c.options, c.linkLabelFields],
+      queryFn: () =>
+        frappe.list<Record<string, unknown> & { name: string }>(c.options as string, {
+          fields: ["name", ...(c.linkLabelFields ?? [])],
+          limit_page_length: 1000,
+        }),
+    })),
+  })
+
+  const linkLabelMaps = linkColumns.reduce<Record<string, Record<string, string>>>((acc, c, i) => {
+    const rows = linkLabelQueries[i]?.data ?? []
+    acc[c.fieldname] = Object.fromEntries(
+      rows.map((r) => [
+        r.name,
+        (c.linkLabelFields ?? []).map((f) => r[f]).filter(Boolean).join(" ") || r.name,
+      ])
+    )
+    return acc
+  }, {})
+
+  function formatCell(c: (typeof columns)[number], row: Record<string, unknown>): string {
+    const raw = row[c.fieldname]
+    if (c.fieldtype === "Link" && linkLabelMaps[c.fieldname]) {
+      return linkLabelMaps[c.fieldname][String(raw)] ?? String(raw ?? "")
+    }
+    return String(raw ?? "")
   }
-  return String(raw ?? "")
-}
 
   const rootTypeField = spec.fields.find((f) => f.fieldname === "root_type")
   const rootTypeOptions = rootTypeField?.options
@@ -325,10 +325,10 @@ function formatCell(c: (typeof columns)[number], row: Record<string, unknown>): 
                           onClick={() => openRow(String(row.name))}
                           className="font-medium hover:underline"
                         >
-                         {formatCell(c, row) || String(row.name)}
+                          {formatCell(c, row) || String(row.name)}
                         </button>
                       ) : (
-                       formatCell(c, row)
+                        formatCell(c, row)
                       )}
                     </TableCell>
                   ))}
@@ -390,7 +390,7 @@ function formatCell(c: (typeof columns)[number], row: Record<string, unknown>): 
                     <tr key={String(row.name)} className="border-b border-border">
                       {columns.map((c) => (
                         <td key={c.fieldname} className="py-1 pr-4">
-                         {formatCell(c, row)}
+                          {formatCell(c, row)}
                         </td>
                       ))}
                     </tr>
@@ -409,7 +409,7 @@ function formatCell(c: (typeof columns)[number], row: Record<string, unknown>): 
             className="max-h-[90vh] w-fit max-w-[calc(100%-2rem)] overflow-y-auto border-none bg-transparent p-0 shadow-none ring-0 sm:max-w-2xl"
           >
             <DialogTitle className="sr-only">
-              {activeName ? `Edit ${spec.title} — ${activeName}` : `New${spec.title}`}
+              {activeName ? `Edit ${spec.title} — ${activeName}` : `New ${spec.title}`}
             </DialogTitle>
             <FinanceEntryScreen
               spec={spec}

@@ -134,6 +134,10 @@ export interface EntrySpec extends FormSpec {
   submittable?: boolean
   /** Workflow actions available at the current state, e.g. ["Submit for Recommendation"]. */
   workflowActions?: string[]
+  /** When set, EntryScreen renders this doctype's fields as a multi-step
+   * wizard (WizardFormLayout) instead of one flat field grid. Optional and
+   * opt-in — every other EntryScreen consumer is unaffected. */
+  wizard?: WizardLayout
 }
 
 export interface ReportSpec {

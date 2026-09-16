@@ -44,22 +44,22 @@ export const breadcrumbResolvers: Record<string, BreadcrumbResolver> = {
     return doc.account_name ?? null
   },
 
- // student_acc serves SMS Student Account (module: Finance Billing, 9 real
-// rows in the DB) — it does exist on the backend; it just wasn't wired to
-// this route before. SMS Student Assessment (0 rows currently) still has
-// its own assessmentSpec/AssessmentActions screen elsewhere, untouched.
-// stud_num links to SMS Student, which has no combined "name" field (and
-// no autoname pattern, so its `name` itself is an opaque hash) — this
-// composes a readable label from first/last name instead.
-student_acc: async (id) => {
-  const doc = await frappe.getDoc<{ stud_num?: string }>("SMS Student Account", id)
-  if (!doc.stud_num) return null
-  const student = await frappe.getDoc<{
-    first_name?: string
-    last_name?: string
-    student_number?: string
-  }>("SMS Student", doc.stud_num)
-  const fullName = [student.first_name, student.last_name].filter(Boolean).join(" ")
-  return fullName || student.student_number || null
-},
+  // student_acc serves SMS Student Account (module: Finance Billing, 9 real
+  // rows in the DB) — it does exist on the backend; it just wasn't wired to
+  // this route before. SMS Student Assessment (0 rows currently) still has
+  // its own assessmentSpec/AssessmentActions screen elsewhere, untouched.
+  // stud_num links to SMS Student, which has no combined "name" field (and
+  // no autoname pattern, so its `name` itself is an opaque hash) — this
+  // composes a readable label from first/last name instead.
+  student_acc: async (id) => {
+    const doc = await frappe.getDoc<{ stud_num?: string }>("SMS Student Account", id)
+    if (!doc.stud_num) return null
+    const student = await frappe.getDoc<{
+      first_name?: string
+      last_name?: string
+      student_number?: string
+    }>("SMS Student", doc.stud_num)
+    const fullName = [student.first_name, student.last_name].filter(Boolean).join(" ")
+    return fullName || student.student_number || null
+  },
 }
