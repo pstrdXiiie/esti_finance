@@ -36,7 +36,9 @@
   "old_assessment",
   "old_account_payment",
   "total_fee",
+  "grand_total",
   "payment",
+  "advance_paid",
   "receivable",
   "refnum",
   "cor_reference",
@@ -297,11 +299,31 @@
    "in_list_view": 1
   },
   {
+   "description": "Mirrors total_fee under ERPNext's own expected field name. erpnext.accounts.doctype.payment_entry.payment_entry.get_reference_details() falls back to ref_doc.get(\"grand_total\") to compute a non-invoice reference's outstanding amount whenever Payment Entry.set_missing_ref_details(force=True) recomputes it (on every save/submit) -- without a real field under this exact name, that lookup returns None and the outstanding amount is silently zeroed, so any payment recorded against this assessment fails validation (\"Allocated Amount cannot be greater than outstanding amount\") no matter how small.",
+   "fieldname": "grand_total",
+   "fieldtype": "Currency",
+   "label": "Grand Total",
+   "hidden": 1,
+   "read_only": 1,
+   "no_copy": 1,
+   "in_list_view": 0
+  },
+  {
    "description": "payment to date; recomputed by the API layer's payment-recording function",
    "fieldname": "payment",
    "fieldtype": "Currency",
    "label": "Payment",
    "read_only": 1,
+   "in_list_view": 0
+  },
+  {
+   "description": "Mirrors payment under ERPNext's own expected field name -- see grand_total's description; get_reference_details() computes outstanding_amount as grand_total - advance_paid for any reference doctype it doesn't specifically recognize.",
+   "fieldname": "advance_paid",
+   "fieldtype": "Currency",
+   "label": "Advance Paid",
+   "hidden": 1,
+   "read_only": 1,
+   "no_copy": 1,
    "in_list_view": 0
   },
   {

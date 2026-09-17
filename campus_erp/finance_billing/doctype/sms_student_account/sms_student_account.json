@@ -1,0 +1,188 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "naming_series:",
+ "creation": "2026-09-14 12:00:00.000000",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "stud_num",
+  "school_year",
+  "semester",
+  "date",
+  "or_number",
+  "assessment",
+  "amount",
+  "balance",
+  "payment",
+  "bal_adjustment",
+  "adj_bal"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "ACC-.YYYY.-.#####",
+   "reqd": 1,
+   "read_only": 0
+  },
+  {
+   "fieldname": "stud_num",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student",
+   "reqd": 1,
+   "read_only": 0,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "school_year",
+   "fieldtype": "Data",
+   "label": "School Year",
+   "reqd": 1,
+   "read_only": 0,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "semester",
+   "fieldtype": "Select",
+   "label": "Semester",
+   "options": "1st Semester\n2nd Semester\n3rd Semester\nsummer\n1st Quarter\n2nd Quarter\n3rd Quarter\n4th Quarter",
+   "reqd": 0,
+   "read_only": 0,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "label": "Date",
+   "default": "Today",
+   "reqd": 0,
+   "read_only": 0
+  },
+  {
+   "fieldname": "or_number",
+   "fieldtype": "Data",
+   "label": "OR Number",
+   "reqd": 0,
+   "read_only": 0
+  },
+  {
+   "fieldname": "assessment",
+   "fieldtype": "Select",
+   "label": "Assessment",
+   "options": "Tuition \nLaboratory \n Registration\n Special Courses\n Graduation\n Other",
+   "reqd": 0,
+   "read_only": 0
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "label": "Amount",
+   "reqd": 0,
+   "read_only": 0
+  },
+  {
+   "fieldname": "balance",
+   "fieldtype": "Currency",
+   "label": "Balance",
+   "description": "Computed on save from amount, prior balance, and any adjustment — see sms_student_account.py",
+   "reqd": 0,
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "payment",
+   "fieldtype": "Select",
+   "label": "Payment",
+   "options": "Cash\nInstallment",
+   "reqd": 0,
+   "read_only": 0
+  },
+  {
+   "fieldname": "bal_adjustment",
+   "fieldtype": "Check",
+   "label": "Balance Adjustment",
+   "reqd": 0,
+   "read_only": 0
+  },
+  {
+   "fieldname": "adj_bal",
+   "fieldtype": "Currency",
+   "label": "Adjustment Balance",
+   "read_only_depends_on": "eval:!doc.bal_adjustment",
+   "reqd": 0,
+   "read_only": 0
+  }
+ ],
+ "icon": "fa fa-file",
+ "index_web_pages_for_search": 1,
+ "istable": 0,
+ "is_submittable": 0,
+ "links": [],
+ "modified": "2026-09-14 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Finance Billing",
+ "name": "SMS Student Account",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "SMS Finance Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "SMS Cashier",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 0,
+   "delete": 0,
+   "email": 0,
+   "export": 0,
+   "print": 0,
+   "read": 1,
+   "report": 0,
+   "role": "SMS Registrar",
+   "share": 0,
+   "write": 0
+  },
+  {
+   "create": 0,
+   "delete": 0,
+   "email": 0,
+   "export": 0,
+   "print": 0,
+   "read": 1,
+   "report": 0,
+   "role": "SMS Student",
+   "share": 0,
+   "write": 0
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

@@ -1,0 +1,47 @@
+import frappe
+from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
+
+def execute():
+    create_custom_fields({
+        "SMS Student": [
+            {"fieldname": "image", "label": "Photo", "fieldtype": "Attach Image", "insert_after": "status"},
+            {"fieldname": "suffix", "label": "Suffix", "fieldtype": "Data", "insert_after": "last_name"},
+            {"fieldname": "student_email_id", "label": "Email", "fieldtype": "Data", "insert_after": "image"},
+            {"fieldname": "student_mobile_number", "label": "Mobile Number", "fieldtype": "Data", "insert_after": "student_email_id"},
+            {"fieldname": "nationality", "label": "Nationality", "fieldtype": "Data", "insert_after": "gender"},
+            {"fieldname": "religion", "label": "Religion", "fieldtype": "Link", "options": "SMS Code", "insert_after": "nationality"},
+            {"fieldname": "birth_place", "label": "Birth Place", "fieldtype": "Data", "insert_after": "date_of_birth"},
+            {"fieldname": "address_line_1", "label": "Address Line 1", "fieldtype": "Data", "insert_after": "religion"},
+            {"fieldname": "town", "label": "Town", "fieldtype": "Data", "insert_after": "address_line_1"},
+            {"fieldname": "province", "label": "Province", "fieldtype": "Data", "insert_after": "town"},
+            {"fieldname": "city", "label": "City", "fieldtype": "Data", "insert_after": "province"},
+            {"fieldname": "country", "label": "Country", "fieldtype": "Link", "options": "Country", "insert_after": "city"},
+            {"fieldname": "lrn", "label": "LRN", "fieldtype": "Data", "insert_after": "country"},
+            {"fieldname": "elementary", "label": "Elementary School", "fieldtype": "Data", "insert_after": "lrn"},
+            {"fieldname": "year_elementary", "label": "Year (Elementary)", "fieldtype": "Data", "insert_after": "elementary"},
+            {"fieldname": "secondary", "label": "Secondary School", "fieldtype": "Data", "insert_after": "year_elementary"},
+            {"fieldname": "year_secondary", "label": "Year (Secondary)", "fieldtype": "Data", "insert_after": "secondary"},
+            {"fieldname": "tertiary", "label": "Tertiary School", "fieldtype": "Data", "insert_after": "year_secondary"},
+            {"fieldname": "year_tertiary", "label": "Year (Tertiary)", "fieldtype": "Data", "insert_after": "tertiary"},
+            {"fieldname": "prev_course", "label": "Previous Course", "fieldtype": "Data", "insert_after": "year_tertiary"},
+            {"fieldname": "transferee", "label": "Transferee", "fieldtype": "Check", "insert_after": "prev_course"},
+            {"fieldname": "graduated", "label": "Graduated", "fieldtype": "Check", "insert_after": "transferee"},
+            {"fieldname": "year_graduated", "label": "Year Graduated", "fieldtype": "Data", "insert_after": "graduated"},
+            {"fieldname": "last_course_attended", "label": "Last Course Attended", "fieldtype": "Data", "insert_after": "year_graduated"},
+            {"fieldname": "year_last_attended", "label": "Year Last Attended", "fieldtype": "Data", "insert_after": "last_course_attended"},
+            {"fieldname": "general_average", "label": "General Average", "fieldtype": "Float", "insert_after": "year_last_attended"},
+            {"fieldname": "pr_no", "label": "PR No.", "fieldtype": "Data", "insert_after": "general_average"},
+            {"fieldname": "rfid", "label": "RFID", "fieldtype": "Data", "insert_after": "pr_no"},
+            {"fieldname": "guardian_section", "label": "Guardian Information", "fieldtype": "Section Break", "insert_after": "rfid"},
+            {"fieldname": "father_name", "label": "Father's Name", "fieldtype": "Data", "insert_after": "guardian_section"},
+            {"fieldname": "father_mobile", "label": "Father's Mobile", "fieldtype": "Data", "insert_after": "father_name"},
+            {"fieldname": "father_occupation", "label": "Father's Occupation", "fieldtype": "Data", "insert_after": "father_mobile"},
+            {"fieldname": "father_address", "label": "Father's Address", "fieldtype": "Data", "insert_after": "father_occupation"},
+            {"fieldname": "guardian_col", "label": "", "fieldtype": "Column Break", "insert_after": "father_address"},
+            {"fieldname": "mother_name", "label": "Mother's Name", "fieldtype": "Data", "insert_after": "guardian_col"},
+            {"fieldname": "mother_mobile", "label": "Mother's Mobile", "fieldtype": "Data", "insert_after": "mother_name"},
+            {"fieldname": "mother_occupation", "label": "Mother's Occupation", "fieldtype": "Data", "insert_after": "mother_mobile"},
+            {"fieldname": "mother_address", "label": "Mother's Address", "fieldtype": "Data", "insert_after": "mother_occupation"},
+            {"fieldname": "credentials", "label": "Credentials", "fieldtype": "Table", "options": "SMS Student Credential", "insert_after": "mother_address"},
+        ]
+    })

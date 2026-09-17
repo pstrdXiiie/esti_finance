@@ -42,6 +42,12 @@ class SMSStudentAssessment(AccountsController):
 			- flt(self.subsidy) + flt(self.old_account) - flt(self.old_account_payment)
 		)
 		self.receivable = flt(self.total_fee) - flt(self.payment)
+		# Kept in sync with total_fee/payment under the field names ERPNext's
+		# own Payment Entry expects from any reference doctype it doesn't
+		# specifically special-case -- see grand_total's own field
+		# description for why this exists.
+		self.grand_total = self.total_fee
+		self.advance_paid = self.payment
 
 	def set_missing_accounts_and_fields(self):
 		if not self.company:

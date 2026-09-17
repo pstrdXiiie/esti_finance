@@ -1,3 +1,4 @@
+
 app_name = "campus_erp"
 app_title = "Campus ERP"
 app_publisher = "School Administration"
@@ -155,8 +156,12 @@ after_migrate = [
 # 		"on_update": "method",
 # 		"on_cancel": "method",
 # 		"on_trash": "method"
-# 	}
-# }
+# 	},
+doc_events = {
+	"Student": {
+		"before_insert": "campus_erp.utils.student.set_student_control_number"
+	}
+}
 
 # Scheduled Tasks
 # ---------------

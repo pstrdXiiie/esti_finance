@@ -31,6 +31,8 @@ from frappe import _
 from frappe.query_builder.functions import Sum
 from frappe.utils import flt
 
+from campus_erp.api.registrar import enroll
+
 
 # Rounding tolerance for balance comparisons (a centavo), so float noise from
 # repeated recomputation never trips an over/under-payment guard by itself.
@@ -60,11 +62,20 @@ def record_payment(
 			_("Assessment {0} must be submitted before a payment can be recorded against it.").format(assessment)
 		)
 
-	# erpnext's Payment Entry does not validate references for party_type
-	# "Student" at all (get_valid_reference_doctypes() has no case for it),
-	# so this is the only place that actually checks the payment makes
-	# sense. Overpayment is allowed (refunds/credits happen in the real
-	# world) but flagged rather than silently swallowed.
+	# erpnext's Payment Entry.validate_reference_documents() skips party_type
+	# "Student" entirely (get_valid_reference_doctypes() has no case for it),
+	# but validate_allocated_amount() and the set_missing_ref_details(force=True)
+	# call just before it in validate() apply regardless of party_type --
+	# the latter recomputes each reference row's outstanding_amount from
+	# get_reference_details(), which falls back to
+	# ref_doc.get("grand_total") - ref_doc.get("advance_paid") for any
+	# reference doctype it doesn't special-case. SMS Student Assessment
+	# mirrors total_fee/payment onto grand_total/advance_paid (see
+	# calculate_totals()) specifically so that recompute lands on the real
+	# outstanding figure instead of silently zeroing it. So this check below
+	# is a genuine second opinion, not the only one -- and overpayment is
+	# allowed here (refunds/credits happen in the real world) but flagged
+	# rather than silently swallowed.
 	if amount - flt(doc.receivable) > FLT_TOLERANCE:
 		frappe.msgprint(
 			_("Payment of {0} exceeds the outstanding receivable of {1} for {2}. Recording as an overpayment.").format(
@@ -197,7 +208,15 @@ def refresh_assessment_balance(assessment: str) -> dict:
 	payment = flt(result[0].total) if result and result[0].total is not None else 0.0
 	receivable = flt(total_fee) - payment
 
-	frappe.db.set_value("SMS Student Assessment", assessment, {"payment": payment, "receivable": receivable})
+	frappe.db.set_value(
+		"SMS Student Assessment",
+		assessment,
+		# advance_paid kept in lockstep with payment -- see calculate_totals's
+		# comment on grand_total/advance_paid. This write bypasses validate()
+		# (same reason as payment/receivable above), so nothing else keeps it
+		# in sync for a doc that's already submitted.
+		{"payment": payment, "receivable": receivable, "advance_paid": payment},
+	)
 	return {"payment": payment, "receivable": receivable}
 
 
@@ -339,5 +358,334 @@ def record_past_receivable(student: str, as_of_date: str | None = None) -> dict:
 	)
 	doc.insert(ignore_permissions=frappe.has_permission("SMS Past Receivable", "create"))
 	return {"name": doc.name, "receivable": receivable}
+
+
+def _sanitized_receivable_account(company_doc) -> str | None:
+	"""Company.default_receivable_account is a plain default setting, not
+	itself validated against real Account records — on this site it
+	currently points at an Account that was never actually created (a
+	pre-existing chart-of-accounts gap, unrelated to this feature). Returns
+	it only when it resolves to something real; None otherwise, since the
+	field is optional here — record_payment() will need it fixed before an
+	actual payment can be posted against an assessment missing it.
+
+	Must be re-applied before every save, not just at creation: something
+	elsewhere in this site's setup (not this file, not campus_erp's hooks.py
+	— no doc_events/Property Setter/fetch_from was found on this field)
+	re-populates receivable_account from the Company default on every
+	doc.save()/insert(), even when it was explicitly left unset going in.
+	"""
+	receivable_account = company_doc.default_receivable_account
+	if receivable_account and not frappe.db.exists("Account", receivable_account):
+		return None
+	return receivable_account
+
+
+def _lookup_program_enrollment(student: str) -> str:
+	program_enrollment = frappe.get_all(
+		"Program Enrollment",
+		filters={"student": student},
+		order_by="creation desc",
+		limit=1,
+		pluck="name",
+	)
+	if not program_enrollment:
+		frappe.throw(_("Student {0} has no Program Enrollment on record.").format(student))
+	return program_enrollment[0]
+
+
+def _auto_enroll_from_pre_enrollment(student: str, school_year: str, semester: int) -> dict | None:
+	"""Best-effort auto-enroll into whichever offered class (Student Group)
+	matches each of the student's prescribed subjects for this term — same
+	logic as registrar.save_pre_enrollment's own pass, re-run here since
+	Assessment (not Pre-Enrollment) is this app's actual point of no return
+	for a term, and a registrar isn't necessarily re-saving Pre-Enrollment
+	again after this. Returns None if there's no Pre-Enrollment on record for
+	this student/term at all (shouldn't normally happen, since Assessment is
+	only ever reached from an existing Pre-Enrollment, but this function
+	doesn't assume that).
+	"""
+	pre_enrollments = frappe.get_all(
+		"SMS Pre Enrollment",
+		filters={"student": student, "academic_year": school_year, "semester": semester},
+		limit=1,
+		pluck="name",
+	)
+	if not pre_enrollments:
+		return None
+	pe_doc = frappe.get_doc("SMS Pre Enrollment", pre_enrollments[0])
+
+	enrolled, skipped, failed = [], [], []
+	for row in pe_doc.subjects:
+		offered = frappe.get_all(
+			"Student Group",
+			filters={
+				"program": pe_doc.program,
+				"academic_year": pe_doc.academic_year,
+				"course": row.subject,
+				"group_based_on": "Course",
+			},
+			pluck="name",
+		)
+		if not offered:
+			skipped.append({"subject": row.subject, "reason": _("No offered class found for this subject.")})
+			continue
+		if len(offered) > 1:
+			skipped.append({
+				"subject": row.subject,
+				"reason": _("Multiple classes offered — choose one in Add/Remove Subjects."),
+			})
+			continue
+
+		already_enrolled = frappe.get_all(
+			"Course Enrollment",
+			filters={"student": student, "student_group": offered[0]},
+			limit=1,
+		)
+		if already_enrolled:
+			enrolled.append({"subject": row.subject, "student_group": offered[0]})
+			continue
+
+		try:
+			enroll(student, offered[0])
+			enrolled.append({"subject": row.subject, "student_group": offered[0]})
+		except Exception as e:
+			failed.append({"subject": row.subject, "reason": str(e)})
+
+	return {"enrolled": enrolled, "skipped": skipped, "failed": failed}
+
+
+def _assessment_response(
+	doc, auto_enrollment: dict | None = None, payment_mode: str = "Cash", installment_months: int = 1
+) -> dict:
+	misc_items = [
+		{"particular": r.particular, "amount": r.amount}
+		for r in doc.assessment_detail
+		if r.item_type == "Misc Fee"
+	]
+	extra_items = [
+		{"particular": r.particular, "amount": r.amount}
+		for r in doc.assessment_detail
+		if r.item_type == "Surcharge"
+	]
+
+	program_doc = frappe.get_cached_doc("Program", doc.program) if doc.program else None
+	tuition_rate = flt(program_doc.get("tuition_fee")) if program_doc else 0.0
+
+	pre_enrollment = frappe.get_all(
+		"SMS Pre Enrollment",
+		filters={"student": doc.student, "academic_year": doc.school_year, "semester": doc.semester},
+		fields=["total_units"],
+		limit=1,
+	)
+	total_units = pre_enrollment[0].total_units if pre_enrollment else 0
+
+	return {
+		"name": doc.name,
+		"docstatus": doc.docstatus,
+		"status": doc.status,
+		"student": doc.student,
+		"student_name": doc.student_name,
+		"program_enrollment": doc.program_enrollment,
+		"program": doc.program,
+		"school_year": doc.school_year,
+		"school_term": doc.school_term,
+		"semester": doc.semester,
+		"year_level": doc.year_level,
+		"posting_date": str(doc.posting_date),
+		"tuition": doc.tuition,
+		"tuition_rate": tuition_rate,
+		"total_units": total_units,
+		"misc_fee": doc.misc_fee,
+		# Which SMS Fee Header the misc_items came from isn't persisted on
+		# this doctype (it has no field for it, and adding one wasn't worth
+		# a second custom-field ask on top of everything else this feature
+		# already needed) — always None here. The only user-visible effect:
+		# reopening a saved assessment shows every fee under the
+		# last-selected header pre-checked rather than restoring the exact
+		# original checkbox state. misc_items itself (the actual saved fee
+		# lines) is unaffected either way.
+		"misc_fee_header": None,
+		"misc_items": misc_items,
+		"other_fee": doc.other_fee,
+		"extra_items": extra_items,
+		"assessment": doc.assessment,
+		"discount_type": doc.discount_type,
+		"discount_percent": doc.discount_percent,
+		# other_discount/misc_discount are the doctype's own real fields (the
+		# controller's calculate_totals() uses other_discount, not a separate
+		# "tuition_discount" field, to compute new_tuition) — read back
+		# directly rather than recomputed, so this can never drift from what
+		# was actually saved.
+		"tuition_discount": flt(doc.other_discount),
+		"misc_discount": flt(doc.misc_discount),
+		"new_tuition": doc.new_tuition,
+		"total_fee": doc.total_fee,
+		"payment": doc.payment,
+		"receivable": doc.receivable,
+		# Not persisted (see save_assessment) — echoed back from what the
+		# caller most recently sent, defaulting to Cash/1 when reopening an
+		# existing assessment with nothing to echo.
+		"payment_mode": payment_mode,
+		"installment_months": installment_months,
+		"auto_enrollment": auto_enrollment,
+	}
+
+
+@frappe.whitelist()
+def get_or_create_assessment(pre_enrollment: str) -> dict:
+	"""Get-or-create the SMS Student Assessment for one Pre-Enrollment's term.
+
+	SMS Student Assessment has no link field back to SMS Pre Enrollment, so
+	the lookup key is (student, program_enrollment, school_year, semester) —
+	the same natural key already implied by check_prerequisites'/enroll's own
+	Program Enrollment lookup elsewhere in registrar.py. Only ever derives a
+	fresh Tuition figure (from Program.tuition_fee × Pre Enrollment.total_units)
+	on first creation; an already-existing assessment's saved figures are
+	returned as-is — the registrar's actual Misc/Discount/Payment choices are
+	applied only by save_assessment, never silently recomputed just from
+	reopening this.
+
+	Only sets the raw inputs (tuition, blank misc/discount) — assessment /
+	new_tuition / total_fee / receivable are deliberately left for the real
+	SMS Student Assessment controller's own validate() (calculate_totals(),
+	set_missing_accounts_and_fields()) to compute on insert, exactly as it
+	would for any other consumer of this doctype, rather than duplicating
+	that formula here and risking the two silently drifting apart.
+	"""
+	pe_doc = frappe.get_doc("SMS Pre Enrollment", pre_enrollment)
+	program_enrollment = _lookup_program_enrollment(pe_doc.student)
+
+	existing = frappe.get_all(
+		"SMS Student Assessment",
+		filters={
+			"student": pe_doc.student,
+			"program_enrollment": program_enrollment,
+			"school_year": pe_doc.academic_year,
+			"semester": pe_doc.semester,
+		},
+		limit=1,
+	)
+	if existing:
+		return _assessment_response(frappe.get_doc("SMS Student Assessment", existing[0].name))
+
+	company = frappe.defaults.get_global_default("company")
+	if not company:
+		frappe.throw(_("No default Company is configured for this site."))
+	company_doc = frappe.get_cached_doc("Company", company)
+
+	program_doc = frappe.get_cached_doc("Program", pe_doc.program)
+	tuition_rate = flt(program_doc.get("tuition_fee"))
+	tuition = flt(pe_doc.total_units) * tuition_rate
+
+	doc = frappe.get_doc({
+		"doctype": "SMS Student Assessment",
+		"student": pe_doc.student,
+		"student_name": pe_doc.student_name,
+		"program_enrollment": program_enrollment,
+		"program": pe_doc.program,
+		"company": company,
+		"currency": company_doc.default_currency,
+		"school_year": pe_doc.academic_year,
+		"school_term": f"Semester {pe_doc.semester}",
+		"semester": pe_doc.semester,
+		"year_level": str(pe_doc.year_level),
+		"posting_date": frappe.utils.today(),
+		"tuition": tuition,
+		"misc_fee": 0,
+		"other_fee": 0,
+		"payment": 0,
+		"receivable_account": _sanitized_receivable_account(company_doc),
+		"status": "Draft",
+		"assessment_detail": [{"particular": "Tuition Fee", "item_type": "Tuition", "amount": tuition}],
+	})
+	doc.insert(ignore_permissions=frappe.has_permission("SMS Student Assessment", "create"))
+	return _assessment_response(doc)
+
+
+@frappe.whitelist()
+def save_assessment(
+	name: str,
+	misc_fee_header: str | None,
+	misc_items: list[dict],
+	extra_items: list[dict],
+	discount_type: str | None,
+	payment_mode: str,
+	installment_months: int,
+) -> dict:
+	"""Finalize an SMS Student Assessment: apply the chosen Miscellaneous
+	items / Additional Fees / Discount, then submit. assessment / new_tuition
+	/ total_fee / receivable are left to the controller's own validate() to
+	(re)compute from the raw inputs set here (misc_fee, other_fee,
+	other_discount, misc_discount) — same reasoning as get_or_create_assessment.
+
+	payment_mode/installment_months are NOT persisted anywhere: SMS Student
+	Assessment's payment_schedule child table isn't read by record_payment()
+	or refresh_assessment_balance() (a payment is recorded against the whole
+	assessment, not a specific installment row), so building it would add a
+	second, unused source of truth rather than serve any real consumer. The
+	frontend's own preview math already shows the per-month figure before
+	Save; this only needs to echo the choice back, not act on it.
+
+	Also runs the same best-effort auto-enrollment pass as
+	registrar.save_pre_enrollment (see _auto_enroll_from_pre_enrollment),
+	since Assessment — not Pre-Enrollment — is this app's real point of no
+	return for a term.
+	"""
+	doc = frappe.get_doc("SMS Student Assessment", name)
+
+	misc_fee = sum(flt(i.get("amount")) for i in misc_items)
+	other_fee = sum(flt(i.get("amount")) for i in extra_items)
+
+	if discount_type:
+		discount = compute_discount(discount_type, doc.tuition, misc_fee)
+		tuition_discount = discount["tuition_discount"]
+		misc_discount = discount["misc_discount"]
+	else:
+		tuition_discount = 0.0
+		misc_discount = 0.0
+
+	detail = [{"particular": "Tuition Fee", "item_type": "Tuition", "amount": doc.tuition}]
+	for item in misc_items:
+		detail.append({
+			"particular": item.get("particular"),
+			"item_type": "Misc Fee",
+			"amount": flt(item.get("amount")),
+		})
+	for item in extra_items:
+		detail.append({
+			"particular": item.get("particular"),
+			"item_type": "Surcharge",
+			"amount": flt(item.get("amount")),
+		})
+	if tuition_discount or misc_discount:
+		detail.append({
+			"particular": "Discount",
+			"item_type": "Discount",
+			"amount": tuition_discount + misc_discount,
+		})
+
+	doc.misc_fee = misc_fee
+	doc.other_fee = other_fee
+	doc.discount_type = discount_type
+	doc.other_discount = tuition_discount
+	doc.misc_discount = misc_discount
+	doc.status = "Assessed"
+	doc.set("assessment_detail", detail)
+	# The controller's set_missing_accounts_and_fields() re-populates
+	# receivable_account from Company.default_receivable_account whenever
+	# it's left blank — re-sanitized here (and again below, since submit()
+	# runs its own independent save cycle) rather than once up front.
+	doc.receivable_account = _sanitized_receivable_account(frappe.get_cached_doc("Company", doc.company))
+
+	doc.save(ignore_permissions=frappe.has_permission("SMS Student Assessment", "write", doc=doc))
+	doc.receivable_account = _sanitized_receivable_account(frappe.get_cached_doc("Company", doc.company))
+	doc.submit()
+
+	auto_enrollment = _auto_enroll_from_pre_enrollment(doc.student, doc.school_year, doc.semester)
+
+	return _assessment_response(
+		doc, auto_enrollment, payment_mode=payment_mode, installment_months=int(installment_months or 1)
+	)
 
 

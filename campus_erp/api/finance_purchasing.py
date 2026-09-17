@@ -218,3 +218,160 @@ def create_replenishment_voucher(pcv_names: list[str], company: str) -> dict:
 		frappe.db.set_value("SMS Canteen PCV", name, {"replenished": 1, "replenishment_reference": je.name})
 
 	return {"journal_entry": je.name, "pcv_count": len(pcv_names), "total_amount": flt(grand_total, 2)}
+
+
+@frappe.whitelist()
+def approve_purchase_requisition(
+	material_request: str,
+	approval_status: str,
+	recommending_approval: str | None = None,
+	approval_remarks: str | None = None,
+) -> dict:
+	"""Backs the Purchase Requisition Approval screen. Material Request has no
+	native approval workflow of its own, so this drives the `approval_status`
+	Custom Field (campus_erp/setup/custom_fields_finance.py) directly: Approved
+	submits the document (docstatus 0 -> 1), which is what
+	create_purchase_orders_from_requisition requires. Rejected and Revision
+	Requested both leave it as Draft with the remark recorded (which
+	naturally blocks PO creation either way) -- the distinction is purely
+	informational for the requester: Revision Requested signals they should
+	edit and resubmit, Rejected does not.
+	"""
+	if approval_status not in ("Pending", "Approved", "Rejected", "Revision Requested"):
+		frappe.throw(_("Approval Status must be Pending, Approved, Rejected, or Revision Requested."))
+
+	mr_doc = frappe.get_doc("Material Request", material_request)
+	if mr_doc.docstatus != 0:
+		frappe.throw(_("Material Request {0} has already been submitted.").format(material_request))
+
+	mr_doc.approval_status = approval_status
+	mr_doc.recommending_approval = recommending_approval
+	mr_doc.approval_remarks = approval_remarks
+	mr_doc.approved_by = frappe.session.user
+	mr_doc.approval_date = today()
+	mr_doc.save(ignore_permissions=frappe.has_permission("Material Request", "write"))
+
+	if approval_status == "Approved":
+		mr_doc.submit()
+
+	return {"name": mr_doc.name, "approval_status": mr_doc.approval_status, "docstatus": mr_doc.docstatus}
+
+
+@frappe.whitelist()
+def get_due_purchase_order_payables(supplier: str | None = None) -> list[dict]:
+	"""Backs the Due Purchase Order Payables screen. There is no separate "SMS
+	Due Purchase Order Payable" doctype — this reads submitted Purchase
+	Orders directly, the same way get_purchase_order_aging computes aging
+	live rather than from a stored column. `payables_settled` / `settlement_
+	reference` (custom_fields_finance.py) track which POs have already been
+	paid via settle_purchase_order_payable, below.
+	"""
+	filters: dict = {"docstatus": 1, "payables_settled": 0}
+	if supplier:
+		filters["supplier"] = ["like", f"%{supplier}%"]
+
+	orders = frappe.get_all(
+		"Purchase Order",
+		filters=filters,
+		fields=[
+			"name",
+			"supplier",
+			"supplier_name",
+			"transaction_date",
+			"tc_name",
+			"total_taxes_and_charges",
+			"grand_total",
+		],
+		order_by="transaction_date asc",
+	)
+
+	rows = []
+	for po in orders:
+		rows.append(
+			{
+				"ponum": po.name,
+				"supcode": po.supplier,
+				"supname": po.supplier_name,
+				"podate": po.transaction_date,
+				"date_posted": "",
+				"sinum": "",
+				"poterms": po.tc_name or "",
+				"potax": flt(po.total_taxes_and_charges),
+				"poamount": flt(po.grand_total),
+				"aging": date_diff(today(), po.transaction_date) if po.transaction_date else 0,
+			}
+		)
+	return rows
+
+
+@frappe.whitelist()
+def settle_purchase_order_payable(
+	purchase_order: str,
+	si_number: str | None = None,
+	check_number: str | None = None,
+	check_date: str | None = None,
+	accounts: list[dict] | None = None,
+) -> dict:
+	"""Settles a due Purchase Order payable, mirroring
+	create_replenishment_voucher's PCV-settlement pattern: builds and submits
+	a real Journal Entry from the on-screen GL grid, balanced against the
+	PO's grand_total, then marks the PO as settled.
+	"""
+	if isinstance(accounts, str):
+		accounts = frappe.parse_json(accounts)
+	if not accounts:
+		frappe.throw(_("Add at least one General Ledger entry before settling this payable."))
+
+	po = frappe.get_doc("Purchase Order", purchase_order)
+	if po.docstatus != 1:
+		frappe.throw(_("Purchase Order {0} must be submitted before its payable can be settled.").format(purchase_order))
+	if po.payables_settled:
+		frappe.throw(_("Purchase Order {0} has already been settled.").format(purchase_order))
+
+	debit_total = sum(flt(row.get("debit")) for row in accounts)
+	credit_total = sum(flt(row.get("credit")) for row in accounts)
+	if abs(flt(debit_total, 2) - flt(credit_total, 2)) > 0.005:
+		frappe.throw(_("Debits and credits must match before settling this payable."))
+	if abs(flt(debit_total, 2) - flt(po.grand_total, 2)) > 0.005:
+		frappe.throw(
+			_("General Ledger total {0} does not match the Purchase Order amount {1}.").format(
+				flt(debit_total, 2), flt(po.grand_total, 2)
+			)
+		)
+
+	company_doc = frappe.get_doc("Company", po.company)
+	if not company_doc.cost_center:
+		frappe.throw(_("Company {0} has no default Cost Center configured.").format(po.company))
+
+	je = frappe.new_doc("Journal Entry")
+	je.voucher_type = "Bank Entry" if check_number else "Journal Entry"
+	je.posting_date = check_date or today()
+	je.company = po.company
+	je.cheque_no = check_number
+	je.cheque_date = check_date
+	je.user_remark = _("Purchase Order {0} payable settlement{1}").format(
+		purchase_order, f" (SI# {si_number})" if si_number else ""
+	)
+	for row in accounts:
+		account = row.get("account")
+		row_data = {
+			"account": account,
+			"debit_in_account_currency": flt(row.get("debit")),
+			"credit_in_account_currency": flt(row.get("credit")),
+			"cost_center": company_doc.cost_center,
+		}
+		# Payable-type accounts (e.g. booking straight against Accounts Payable)
+		# require a party — GL Entry.check_mandatory() rejects a Payable-account
+		# line with no party_type/party, same as any supplier-facing voucher.
+		if frappe.db.get_value("Account", account, "account_type") == "Payable":
+			row_data["party_type"] = "Supplier"
+			row_data["party"] = po.supplier
+		je.append("accounts", row_data)
+	je.insert(ignore_permissions=frappe.has_permission("Journal Entry", "create"))
+	je.submit()
+
+	frappe.db.set_value(
+		"Purchase Order", purchase_order, {"payables_settled": 1, "settlement_reference": je.name}
+	)
+
+	return {"journal_entry": je.name, "purchase_order": purchase_order}
