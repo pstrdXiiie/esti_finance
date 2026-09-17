@@ -1,6 +1,7 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
+import { useWatch } from "react-hook-form"
 import type { Control, FieldValues, Path } from "react-hook-form"
 import type { FieldSpec } from "@/lib/forms/types"
 import { frappe } from "@/lib/frappe"
@@ -24,15 +25,26 @@ import {
 /**
  * Options for a Link field spec'd with `dropdown: true` — the list of
  * records of its target doctype (`spec.options`), rather than the usual
- * type-the-exact-name Data input.
+ * type-the-exact-name Data input. Exported so ChildTableGrid can render the
+ * same dropdown for a Link-type column.
+ *
+ * `dynamicFilters` layers on top of `spec.linkStaticFilters` -- e.g.
+ * receivable_account's `linkFilterFields: ["company"]` means "only show
+ * Accounts for the company actually picked on this form", not every
+ * Receivable-type account across every company. Without it, a global Account
+ * dropdown mixes in every other company's (including ERPNext's own _Test
+ * Company fixtures') matching accounts, burying the one that's actually
+ * selectable for this record.
  */
-function useLinkDropdownOptions(spec: FieldSpec) {
+export function useLinkDropdownOptions(spec: FieldSpec, dynamicFilters?: Record<string, unknown>) {
   const enabled = spec.fieldtype === "Link" && !!spec.dropdown && !!spec.options
+  const filters = { ...spec.linkStaticFilters, ...dynamicFilters }
   return useQuery({
-    queryKey: ["Link", "dropdown-options", spec.options],
+    queryKey: ["Link", "dropdown-options", spec.options, filters],
     queryFn: () =>
       frappe.list<{ name: string }>(spec.options as string, {
         fields: ["name"],
+        filters: Object.keys(filters).length ? filters : undefined,
         limit_page_length: 500,
       }),
     enabled,
@@ -93,7 +105,14 @@ export function DynamicField<T extends FieldValues>({
   /** Loosely typed on purpose -- autofill destination fieldnames come from spec data, not this component's own T. */
   setValue?: (name: string, value: unknown) => void
 }) {
-  const linkDropdownQuery = useLinkDropdownOptions(spec)
+  const filterFieldNames = (spec.linkFilterFields ?? []) as Path<T>[]
+  const filterFieldValues = useWatch({ control, name: filterFieldNames })
+  const dynamicFilters = spec.linkFilterFields?.reduce<Record<string, unknown>>((acc, fname, i) => {
+    const value = filterFieldValues[i]
+    if (value) acc[fname] = value
+    return acc
+  }, {})
+  const linkDropdownQuery = useLinkDropdownOptions(spec, dynamicFilters)
 
   return (
     <FormField

@@ -4,7 +4,6 @@ import {
   UserCheck,
   Building2,
   Receipt,
-  FileText,
   FileCheck2,
   ShoppingBag,
   PackageCheck,
@@ -67,17 +66,10 @@ const GROUPS: Array<{ category: string; items: Item[] }> = [
     category: "Procurement",
     items: [
       {
+        // Entry form and approval table live on one page now -- see
+        // src/components/ui/finance/transactions/purchase-requisition/.
         title: "Purchase Requisition",
         href: "/finance/transactions/purchase_requisition",
-        icon: FileText,
-        badgeBg: "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground",
-        glowBg: "bg-primary/15 group-hover:bg-primary/35",
-        hoverBorder: "hover:border-primary/50",
-        iconColor: "text-primary",
-      },
-      {
-        title: "Purchase Requisition Approval",
-        href: "/finance/transactions/purchase_requisition_approval",
         width: "sm:col-span-2",
         height: "min-h-[160px]",
         icon: FileCheck2,

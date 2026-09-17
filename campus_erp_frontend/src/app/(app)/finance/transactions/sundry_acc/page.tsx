@@ -1,7 +1,6 @@
 "use client"
-import { FinanceMaintenanceScreen } from "@/components/finance/FinanceMaintenanceScreen"
-import { sundryacc } from "@/lib/forms/finance"
+import { SundryAccount } from "@/components/ui/finance/transactions/sundry-account/sundry-account"
 
 export default function SundryAccountListPage() {
-  return <FinanceMaintenanceScreen spec={sundryacc} />
+  return <SundryAccount />
 }

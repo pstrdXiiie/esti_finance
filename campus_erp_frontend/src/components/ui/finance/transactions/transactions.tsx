@@ -1,13 +1,12 @@
 import React from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import RequisitionsListPage from "@/app/(app)/finance/requisitions/page"
 import PurchaseOrdersListPage from "@/app/(app)/finance/purchase-orders/page"
 import CanteenPcvListPage from "@/app/(app)/finance/canteen-pcv/page"
 import PaymentsCashReceipt from "@/components/ui/finance/transactions/payments-cash-receipt/payments-cash-receipt"
 import ChequeVoucherEntryPage from "@/app/(app)/finance/transactions/cheque_voucher_entry/page"
 import StudentAccountsListPage from "@/app/(app)/finance/transactions/student_acc/page"
 import SundryAccountListPage from "@/app/(app)/finance/transactions/sundry_acc/page"
-import PurchaseRequisitionApprovalPage from "@/app/(app)/finance/transactions/purchase_requisition_approval/page"
+import PurchaseRequisitionPage from "@/app/(app)/finance/transactions/purchase_requisition/page"
 import PurchaseOrderReceivingPage from "@/app/(app)/finance/transactions/purchase_order_receiving/page"
 import AccountsPayablePage from "@/app/(app)/finance/transactions/due_purchase_order_payables/page"
 import JournalVoucherEntryPage from "@/app/(app)/finance/transactions/journal_voucher_entry/page"
@@ -39,9 +38,6 @@ export const finance_transactions = ({
             </TabsTrigger>
             <TabsTrigger value="purchase-requisition" className="w-full gap-2 p-3 border-border data-active:bg-primary data-active:text-primary-foreground">
                 Purchase Requisition
-            </TabsTrigger>
-            <TabsTrigger value="purchase-requisition-approval" className="w-full gap-2 p-3 border-border data-active:bg-primary data-active:text-primary-foreground">
-                Purchase Requisition Approval
             </TabsTrigger>
             <TabsTrigger value="purchase-orders" className="w-full gap-2 p-3 border-border data-active:bg-primary data-active:text-primary-foreground">
                 Purchase Orders
@@ -82,12 +78,7 @@ export const finance_transactions = ({
         </TabsContent>
         <TabsContent value="purchase-requisition" className="mt-0 min-w-0 flex-1 overflow-y-auto">
           <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-border">
-            <RequisitionsListPage />
-          </div>
-        </TabsContent>
-        <TabsContent value="purchase-requisition-approval" className="mt-0 min-w-0 flex-1">
-          <div className="tabContent h-full! min-w-0 max-w-full rounded-md border-border">
-            <PurchaseRequisitionApprovalPage />
+            <PurchaseRequisitionPage />
           </div>
         </TabsContent>
         <TabsContent value="purchase-orders" className="mt-0 min-w-0 flex-1 overflow-y-auto">

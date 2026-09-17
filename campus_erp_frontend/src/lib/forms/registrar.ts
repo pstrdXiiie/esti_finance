@@ -193,4 +193,3 @@ export const studentcredentialSpec: FormSpec = {
   ],
 }
 
-// >>>>>>> 55b6bdb (Add Official Transcript of Records layout and Edit Student quick actions)

@@ -5,10 +5,19 @@ import type { EntrySpec } from "@/lib/forms/types"
  * deliberately reuses ERPNext's own Material Request (as the legacy's
  * "Purchase Requisition") and Purchase Order doctypes rather than
  * duplicating them — see campus_erp/setup/custom_fields_finance.py for the
- * handful of Custom Fields (requested_by, pr_purpose, branch, total_amount
- * on Material Request; supplier on Material Request Item; branch,
- * settlement_reference, payables_settled on Purchase Order) that carry the
- * legacy-specific data those native doctypes were missing. Field lists were
+ * handful of Custom Fields (requested_by, pr_purpose, justification, branch,
+ * total_amount, approval_status, recommending_approval, approved_by,
+ * approval_date, approval_remarks on Material Request; supplier on Material
+ * Request Item; branch, settlement_reference, payables_settled on Purchase
+ * Order) that carry the legacy-specific data those native doctypes were
+ * missing. The approval_status/recommending_approval/approved_by/
+ * approval_date/approval_remarks quintet backs the Purchase Requisition
+ * Approval flow (campus_erp.api.finance_purchasing.approve_purchase_requisition)
+ * and is deliberately left off requisitionSpec.fields below — it's driven
+ * directly by that whitelisted call from the bespoke Purchase Requisition
+ * screen (src/components/ui/finance/transactions/purchase-requisition/),
+ * not edited as a flat field on this spec's other consumers
+ * (finance/requisitions, the Maintenance tab). Field lists were
  * checked against the real installed DocTypes:
  *   apps/erpnext/erpnext/stock/doctype/material_request/material_request.json
  *   apps/erpnext/erpnext/stock/doctype/material_request_item/material_request_item.json
@@ -40,6 +49,7 @@ export const requisitionSpec: EntrySpec = {
     { fieldname: "company", label: "Company", fieldtype: "Link", options: "Company", required: true },
     { fieldname: "requested_by", label: "Requested By", fieldtype: "Link", options: "Employee", inListView: true },
     { fieldname: "pr_purpose", label: "Purpose / Remarks", fieldtype: "Small Text" },
+    { fieldname: "justification", label: "Justification", fieldtype: "Small Text" },
     { fieldname: "branch", label: "Branch", fieldtype: "Link", options: "Branch", inListView: true },
     { fieldname: "total_amount", label: "Total Amount", fieldtype: "Currency", readOnly: true, inListView: true },
     // Status is system-managed (Material Request.validate() defaults it to

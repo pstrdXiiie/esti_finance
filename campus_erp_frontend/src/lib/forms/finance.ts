@@ -10,55 +10,6 @@ import type { ChildTableSpec, EntrySpec, FormSpec, WizardLayout } from "@/lib/fo
  * `payment_schedule` (erpnext's native Payment Schedule child table on SMS
  * Student Assessment) is out of scope for this pass per the migration plan.
  */
-export const studentAccountSpec: EntrySpec = {
-  doctype: "SMS Student Account",
-  title: "Student Account",
-  quickLinks: [
-    {
-      label: "View Student",
-      hrefFor: (row) =>
-        row.stud_num ? `/registrar/students?q=${encodeURIComponent(String(row.stud_num))}` : null,
-    },
-  ],
-  fields: [
-    {
-      fieldname: "stud_num",
-      label: "Student",
-      fieldtype: "Link",
-      // Real doctype is "Student" (Education/Registrar) — "SMS Student"
-      // doesn't exist anywhere in the backend; a Link pointed at it can't
-      // resolve or search at all.
-      options: "Student",
-      dropdown: true,
-      linkLabelFields: ["first_name", "middle_name", "last_name"],
-      inListView: true,
-      section: "Account Details",
-    },
-    { fieldname: "school_year", label: "School Year", fieldtype: "Data", inListView: true, section: "Account Details" },
-    {
-      fieldname: "semester",
-      label: "Semester",
-      fieldtype: "Select",
-      options: "1st Semester\n2nd Semester\n3rd Semester\nsummer\n1st Quarter\n2nd Quarter\n3rd Quarter\n4th Quarter",
-      inListView: true,
-      section: "Account Details",
-    },
-    { fieldname: "date", label: "Date", fieldtype: "Date", section: "Account Details" },
-    { fieldname: "or_number", label: "OR Number", fieldtype: "Data", section: "Account Details" },
-    { fieldname: "assessment", label: "Assessment", fieldtype: "Select", options: "Tuition \nLaboratory \n Registration\n Special Courses\n Graduation\n Other", section: "Balances" },
-    { fieldname: "amount", label: "Amount", fieldtype: "Currency", section: "Balances" },
-    { fieldname: "balance", label: "Balance", fieldtype: "Currency", inListView: true, readOnly: true, section: "Balances" },
-    {
-      fieldname: "payment",
-      label: "Payment",
-      fieldtype: "Select",
-      options: "Cash\nInstallment",
-      section: "Balances",
-    },
-   { fieldname: "bal_adjustment", label: "Balance Adjustment", fieldtype: "Check", section: "Adjustments" },
-{ fieldname: "adj_bal", label: "Adjustment Balance", fieldtype: "Currency", readOnlyDependsOn: "eval:!doc.bal_adjustment", section: "Adjustments" },
-  ],
-}
 
 
 export const discountSpec: FormSpec = {
@@ -106,8 +57,28 @@ const assessmentDetailChildTable: ChildTableSpec = {
       options: "Tuition\nMisc Fee\nDiscount\nSurcharge\nPrevious Balance\nScholarship\nTotal",
       required: true,
     },
-    { fieldname: "fee_code", label: "Fee Code", fieldtype: "Link", options: "Fee Category" },
-    { fieldname: "header_code", label: "Header Code", fieldtype: "Link", options: "Fee Category" },
+    {
+      fieldname: "fee_code",
+      label: "Fee Code",
+      fieldtype: "Link",
+      options: "Fee Category",
+      dropdown: true,
+      // Fee Category's own code_type=Detail rows (see the backend custom
+      // field on header_code below) — a Detail row's own `header` field
+      // points back at the Header row it belongs to.
+      linkStaticFilters: { code_type: "Detail" },
+    },
+    {
+      fieldname: "header_code",
+      label: "Header Code",
+      fieldtype: "Link",
+      options: "Fee Category",
+      dropdown: true,
+      // Matches the backend custom field's own description: "Filtered to
+      // Fee Category rows with code_type=Header" (campus_erp/setup/
+      // custom_fields_finance.py).
+      linkStaticFilters: { code_type: "Header" },
+    },
     { fieldname: "amount", label: "Amount", fieldtype: "Currency", required: true },
     { fieldname: "true_amount", label: "True Amount", fieldtype: "Currency" },
     { fieldname: "amount_paid", label: "Amount Paid", fieldtype: "Currency" },
@@ -191,9 +162,15 @@ const assessmentWizard: WizardLayout = {
 
 export const assessmentSpec: EntrySpec = {
   doctype: "SMS Student Assessment",
-  title: "Student Assessment",
+  title: "Student Account",
   submittable: true,
   wizard: assessmentWizard,
+  // Same pair already sanctioned on registrar.ts's studentSpec (deleting a
+  // Student cascades into cancelling+deleting these) -- listed here too so
+  // deleting an assessment directly works the same way: cancel it first if
+  // submitted (reversing its own GL entries via on_submit's on_cancel hook),
+  // then cancel+delete any Payment Entry still referencing it before retrying.
+  cancelAndDeleteDoctypes: ["SMS Student Assessment", "Payment Entry"],
   fields: [
     {
       fieldname: "student",
@@ -237,9 +214,9 @@ export const assessmentSpec: EntrySpec = {
     { fieldname: "program", label: "Program", fieldtype: "Link", options: "Program", readOnly: true },
     { fieldname: "company", label: "Company", fieldtype: "Link", options: "Company", required: true },
     { fieldname: "currency", label: "Currency", fieldtype: "Link", options: "Currency" },
-    { fieldname: "school_year", label: "School Year", fieldtype: "Data", required: true },
+    { fieldname: "school_year", label: "School Year", fieldtype: "Data", required: true, inListView: true },
     { fieldname: "school_term", label: "School Term", fieldtype: "Data", required: true },
-    { fieldname: "semester", label: "Semester", fieldtype: "Int", required: true },
+    { fieldname: "semester", label: "Semester", fieldtype: "Int", required: true, inListView: true },
     { fieldname: "year_level", label: "Year Level", fieldtype: "Data" },
     {
       fieldname: "student_type",
@@ -260,7 +237,7 @@ export const assessmentSpec: EntrySpec = {
     { fieldname: "discount_percent", label: "Discount Percent", fieldtype: "Float" },
     { fieldname: "other_discount", label: "Other Discount", fieldtype: "Currency" },
     { fieldname: "misc_discount", label: "Misc Discount", fieldtype: "Currency" },
-    { fieldname: "scholarship", label: "Scholarship", fieldtype: "Link", options: "Fee Category" },
+    { fieldname: "scholarship", label: "Scholarship", fieldtype: "Link", options: "Fee Category", dropdown: true },
     { fieldname: "subsidy", label: "Subsidy", fieldtype: "Currency" },
     { fieldname: "old_account", label: "Old Account", fieldtype: "Currency" },
     { fieldname: "old_assessment", label: "Old Assessment", fieldtype: "Currency" },
@@ -270,7 +247,22 @@ export const assessmentSpec: EntrySpec = {
     { fieldname: "receivable", label: "Receivable", fieldtype: "Currency", readOnly: true, inListView: true },
     { fieldname: "refnum", label: "Ref No", fieldtype: "Data" },
     { fieldname: "cor_reference", label: "COR Reference", fieldtype: "Data" },
-    { fieldname: "receivable_account", label: "Receivable Account", fieldtype: "Link", options: "Account", readOnly: true },
+    {
+      fieldname: "receivable_account",
+      label: "Receivable Account",
+      fieldtype: "Link",
+      options: "Account",
+      dropdown: true,
+      // Left editable (backend only auto-fills from Company.default_receivable_account
+      // when this is blank -- see set_missing_accounts_and_fields in
+      // sms_student_assessment.py) so an encoder can override it instead of being
+      // stuck with whatever the Company default happens to be.
+      linkStaticFilters: { account_type: "Receivable", is_group: 0 },
+      // Without this, the dropdown mixes in every other company's matching
+      // Receivable accounts too (including ERPNext's own _Test Company
+      // fixtures), burying this record's actual company account in noise.
+      linkFilterFields: ["company"],
+    },
     { fieldname: "cost_center", label: "Cost Center", fieldtype: "Link", options: "Cost Center", readOnly: true },
     {
       fieldname: "status",
@@ -279,8 +271,8 @@ export const assessmentSpec: EntrySpec = {
       options: "Draft\nAssessed\nReassessed\nWithdrawn\nCancelled",
       inListView: true,
     },
-    { fieldname: "is_reassessment", label: "Is Reassessment", fieldtype: "Check" },
-    { fieldname: "branch", label: "Branch", fieldtype: "Link", options: "Branch" },
+    { fieldname: "is_reassessment", label: "Is Reassessment", fieldtype: "Check", inListView: true },
+    { fieldname: "branch", label: "Branch", fieldtype: "Link", options: "Branch", dropdown: true },
   ],
   childTable: assessmentDetailChildTable,
 }
