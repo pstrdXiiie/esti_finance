@@ -30,14 +30,20 @@ import {
   type RequisitionRow,
 } from "./shared"
 
-const emptyForm = {
-  transaction_date: new Date().toISOString().slice(0, 10),
-  schedule_date: "",
-  company: "",
-  requested_by: "",
-  branch: "",
-  pr_purpose: "",
-  justification: "",
+// A function, not a module-level constant -- `new Date()` needs to run
+// fresh every time the form resets, not once when this file first loads
+// (which would freeze "today" to whatever date the server process started
+// on, on a long-running dev/prod server).
+function getEmptyForm() {
+  return {
+    transaction_date: new Date().toISOString().slice(0, 10),
+    schedule_date: "",
+    company: "",
+    requested_by: "",
+    branch: "",
+    pr_purpose: "",
+    justification: "",
+  }
 }
 
 /**
@@ -54,7 +60,7 @@ export function PurchaseRequisitionApprovalPage() {
   const formRef = useRef<HTMLDivElement>(null)
 
   const [editingName, setEditingName] = useState<string | null>(null)
-  const [form, setForm] = useState(emptyForm)
+  const [form, setForm] = useState(getEmptyForm)
   const [items, setItems] = useState<Array<Record<string, unknown>>>([])
 
   const [search, setSearch] = useState("")
@@ -144,7 +150,7 @@ export function PurchaseRequisitionApprovalPage() {
 
   function resetForm() {
     setEditingName(null)
-    setForm({ ...emptyForm, company: companiesQuery.data?.[0]?.name ?? "" })
+    setForm({ ...getEmptyForm(), company: companiesQuery.data?.[0]?.name ?? "" })
     setItems([])
   }
 
