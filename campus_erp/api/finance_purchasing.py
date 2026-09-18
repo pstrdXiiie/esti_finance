@@ -13,6 +13,7 @@ doctypes were missing.
 """
 
 import frappe
+from erpnext.setup.utils import get_exchange_rate
 from erpnext.stock.doctype.material_request.material_request import make_purchase_order
 from frappe import _
 from frappe.utils import date_diff, flt, today
@@ -109,6 +110,109 @@ def create_purchase_orders_from_requisition(material_request: str) -> dict:
 			created.append(new_po.name)
 
 	return {"purchase_orders": created}
+
+
+def _resolve_po_currency(supplier: str, company: str) -> tuple[str, float]:
+	"""A Purchase Order's currency/conversion_rate are normally filled in by
+	Desk UI client scripts the moment Supplier is picked — there's no such
+	script behind the plain REST create endpoint, so the direct-create
+	Purchase Order screen (Finance > Transactions) needs this resolved here
+	instead. Defaults to the Supplier's own currency, falling back to the
+	Company's, with conversion_rate 1 unless they actually differ.
+	"""
+	company_currency = frappe.get_cached_value("Company", company, "default_currency")
+	if not company_currency:
+		frappe.throw(_("Company {0} has no Default Currency configured.").format(company))
+
+	supplier_currency = frappe.get_cached_value("Supplier", supplier, "default_currency") or company_currency
+	if supplier_currency == company_currency:
+		return supplier_currency, 1.0
+
+	rate = flt(get_exchange_rate(supplier_currency, company_currency, today()))
+	return supplier_currency, rate or 1.0
+
+
+def _set_purchase_order_items(po, items: list[dict]) -> None:
+	po.set("items", [])
+	for row in items:
+		item_code = row.get("item_code")
+		qty = flt(row.get("qty"))
+		if not item_code or not qty:
+			continue
+		po.append("items", {"item_code": item_code, "qty": qty, "rate": flt(row.get("rate"))})
+
+	if not po.items:
+		frappe.throw(_("Add at least one item with a Qty before saving a Purchase Order."))
+
+
+@frappe.whitelist()
+def create_purchase_order(
+	supplier: str,
+	company: str,
+	transaction_date: str,
+	schedule_date: str,
+	branch: str | None = None,
+	items: list[dict] | None = None,
+) -> dict:
+	"""Creates a Purchase Order directly, with no source Purchase Requisition
+	— the Purchase Order screen (Finance > Transactions) needs this for
+	one-off orders that don't start from an approved requisition.
+	create_purchase_orders_from_requisition (above) remains the only path
+	when a PO should trace back to a Material Request.
+	"""
+	if isinstance(items, str):
+		items = frappe.parse_json(items)
+	if not items:
+		frappe.throw(_("Add at least one item before saving a Purchase Order."))
+
+	currency, conversion_rate = _resolve_po_currency(supplier, company)
+
+	po = frappe.new_doc("Purchase Order")
+	po.supplier = supplier
+	po.company = company
+	po.transaction_date = transaction_date
+	po.schedule_date = schedule_date
+	po.branch = branch
+	po.currency = currency
+	po.conversion_rate = conversion_rate
+	_set_purchase_order_items(po, items)
+
+	po.insert(ignore_permissions=frappe.has_permission("Purchase Order", "create"))
+	return {"name": po.name}
+
+
+@frappe.whitelist()
+def update_purchase_order(
+	purchase_order: str,
+	supplier: str,
+	transaction_date: str,
+	schedule_date: str,
+	branch: str | None = None,
+	items: list[dict] | None = None,
+) -> dict:
+	"""Updates a still-Draft Purchase Order's header + items. A submitted PO
+	is edited via its own detail screen's docstatus transitions, not here.
+	"""
+	if isinstance(items, str):
+		items = frappe.parse_json(items)
+	if not items:
+		frappe.throw(_("Add at least one item before saving a Purchase Order."))
+
+	po = frappe.get_doc("Purchase Order", purchase_order)
+	if po.docstatus != 0:
+		frappe.throw(
+			_("Purchase Order {0} is no longer a Draft and cannot be edited here.").format(purchase_order)
+		)
+
+	po.supplier = supplier
+	po.transaction_date = transaction_date
+	po.schedule_date = schedule_date
+	po.branch = branch
+	po.currency, po.conversion_rate = _resolve_po_currency(supplier, po.company)
+	_set_purchase_order_items(po, items)
+
+	po.save(ignore_permissions=frappe.has_permission("Purchase Order", "write"))
+	return {"name": po.name}
 
 
 @frappe.whitelist()

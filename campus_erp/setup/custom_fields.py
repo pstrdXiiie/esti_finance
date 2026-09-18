@@ -169,14 +169,6 @@ CUSTOM_FIELDS = {
 		{"fieldname": "bg_front", "label": "Certificate Background (Front)", "fieldtype": "Attach Image", "insert_after": "column_break_sms_branch_1"},
 		{"fieldname": "bg_back", "label": "Certificate Background (Back)", "fieldtype": "Attach Image", "insert_after": "bg_front"},
 	],
-	"SMS Student": [
-		{"fieldname": "branch", "label": "Branch", "fieldtype": "Link", "options": "Branch", "insert_after": "status"},
-		{"fieldname": "scholarship", "label": "Scholarship", "fieldtype": "Link", "options": "SMS Code",
-			"description": "Filtered to SMS Code.code_type = Scholarship", "insert_after": "branch"},
-		{"fieldname": "discount_type", "label": "Discount Type", "fieldtype": "Link", "options": "SMS Code",
-			"description": "Filtered to SMS Code.code_type = Fee", "insert_after": "scholarship"},
-		{"fieldname": "signature", "label": "Signature", "fieldtype": "Attach Image", "insert_after": "discount_type"},
-	],
 }
 
 
@@ -192,17 +184,6 @@ def sync_registrar_property_setters():
 		},
 		validate_fields_for_doctype=False,
 	)
-	frappe.make_property_setter(
-		{
-			"doctype": "Program Enrollment",
-			"fieldname": "student",
-			"property": "options",
-			"value": "SMS Student",
-			"property_type": "Link",
-		},
-		validate_fields_for_doctype=False,
-	)
-
 
 def sync_registrar_custom_fields():
 	"""Idempotent — safe to call from after_migrate every time (blueprint Phase 1)."""

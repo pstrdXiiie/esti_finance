@@ -9,10 +9,15 @@
  "field_order": [
   "naming_series",
   "student",
+  "program",
+  "semester",
+  "school_year",
   "is_graduate",
   "date_graduated",
   "date_issued",
-  "gmc_no"
+  "gmc_no",
+  "checked_by",
+  "remarks"
  ],
  "fields": [
   {
@@ -32,9 +37,28 @@
    "reqd": 1
   },
   {
+   "description": "Snapshotted at issuance, so a later program change doesn't alter an already-issued certificate's own record",
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "label": "Program",
+   "options": "Program",
+   "reqd": 1
+  },
+  {
+   "fieldname": "semester",
+   "fieldtype": "Select",
+   "label": "Last Semester Attended",
+   "options": "First\nSecond\nThird"
+  },
+  {
+   "fieldname": "school_year",
+   "fieldtype": "Data",
+   "label": "Last School Year Attended"
+  },
+  {
    "fieldname": "is_graduate",
    "fieldtype": "Check",
-   "label": "Is Graduate"
+   "label": "Graduated"
   },
   {
    "fieldname": "date_graduated",
@@ -51,6 +75,16 @@
    "fieldtype": "Data",
    "label": "GMC No",
    "read_only": 1
+  },
+  {
+   "fieldname": "checked_by",
+   "fieldtype": "Data",
+   "label": "Checked By"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
   }
  ],
  "icon": "fa fa-file",
@@ -76,6 +110,21 @@
    "read": 1,
    "report": 1,
    "role": "SMS Registrar",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "SMS Administrator",
    "share": 1,
    "submit": 1,
    "write": 1
